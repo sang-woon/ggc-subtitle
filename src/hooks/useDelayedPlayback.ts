@@ -1,12 +1,13 @@
 'use client';
 
 /**
- * 지연 송출 모드 훅
+ * 지연 송출 모드 훅 v2
  *
- * 영상을 지연시켜 재생하고, 그 동안 자막을 완전히 보정한 후 표시합니다.
- * - 오디오 캡처 → STT → 중복 제거 → OpenAI 보정 → 버퍼 저장
- * - 지연 시간 후 영상 재생 시작
- * - 버퍼된 자막과 영상 동기화
+ * 원리:
+ * 1. 영상 로드 시 바로 재생하지 않고 버퍼링 시작
+ * 2. 영상을 muted로 재생하면서 오디오 캡처 → STT → 보정
+ * 3. 15초 후 영상을 처음으로 되감고 소리와 함께 재생
+ * 4. 버퍼된 자막이 영상과 동기화되어 표시
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -14,12 +15,10 @@ import { useRtzrStream } from './useRtzrStream';
 import { AudioCapture } from '@/lib/audio/capture';
 import type { Subtitle } from '@/types';
 
-// 기본 지연 시간 (15초)
 const DEFAULT_DELAY_MS = 15000;
 
 interface BufferedSubtitle extends Subtitle {
-  processedAt: number; // 처리 완료 시간
-  corrected: boolean;  // OpenAI 보정 완료 여부
+  processedAt: number;
 }
 
 interface UseDelayedPlaybackOptions {
@@ -28,23 +27,21 @@ interface UseDelayedPlaybackOptions {
   title?: string;
   delayMs?: number;
   enableOpenAI?: boolean;
-  onSubtitleReady?: (subtitle: Subtitle) => void;
 }
 
 interface UseDelayedPlaybackReturn {
   isBuffering: boolean;
   isPlaying: boolean;
-  bufferProgress: number; // 0-100
+  bufferProgress: number;
   bufferedSubtitles: Subtitle[];
-  displaySubtitles: Subtitle[]; // 현재 표시 가능한 자막
+  displaySubtitles: Subtitle[];
   currentTranscript: string;
   error: string | null;
   startDelayedPlayback: (videoElement: HTMLVideoElement) => Promise<void>;
   stopPlayback: () => void;
-  getSubtitleAtTime: (timeMs: number) => Subtitle | null;
 }
 
-// 중복 단어/음절 제거 함수
+// 중복 제거 함수
 function removeDuplicates(text: string): string {
   let result = text;
   result = result.replace(/(\S+)\s+\1(?=\s|$)/g, '$1');
@@ -57,7 +54,7 @@ function removeDuplicates(text: string): string {
   return result;
 }
 
-// 이전 자막과 유사도 체크
+// 유사도 체크
 function isSimilarToPrevious(newText: string, prevText: string): boolean {
   if (!prevText) return false;
   if (newText === prevText) return true;
@@ -70,7 +67,7 @@ function isSimilarToPrevious(newText: string, prevText: string): boolean {
   return false;
 }
 
-// OpenAI 자막 보정
+// OpenAI 보정
 async function correctWithOpenAI(text: string, context?: string): Promise<string> {
   try {
     const response = await fetch('/api/openai/correct', {
@@ -78,9 +75,7 @@ async function correctWithOpenAI(text: string, context?: string): Promise<string
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, context }),
     });
-
     if (!response.ok) return text;
-
     const data = await response.json();
     return data.skipped ? text : data.corrected;
   } catch {
@@ -88,33 +83,12 @@ async function correctWithOpenAI(text: string, context?: string): Promise<string
   }
 }
 
-// DB에 자막 저장
-async function saveSubtitleToDb(subtitle: Subtitle, seq: number): Promise<boolean> {
-  try {
-    const response = await fetch('/api/subtitles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: subtitle.sessionId,
-        startTimeMs: subtitle.startTimeMs,
-        endTimeMs: subtitle.endTimeMs,
-        text: subtitle.text,
-        confidence: subtitle.confidence,
-        seq,
-      }),
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-// 세션 생성/조회
+// 세션 생성
 async function getOrCreateSession(
   kmsUrl: string,
   midx: number,
   title?: string
-): Promise<{ session: { id: string }; isExisting: boolean; subtitleCount: number } | null> {
+): Promise<{ session: { id: string } } | null> {
   try {
     const response = await fetch('/api/sessions', {
       method: 'POST',
@@ -128,13 +102,32 @@ async function getOrCreateSession(
   }
 }
 
+// DB 저장
+async function saveSubtitleToDb(subtitle: Subtitle, seq: number): Promise<void> {
+  try {
+    await fetch('/api/subtitles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: subtitle.sessionId,
+        startTimeMs: subtitle.startTimeMs,
+        endTimeMs: subtitle.endTimeMs,
+        text: subtitle.text,
+        confidence: subtitle.confidence,
+        seq,
+      }),
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export function useDelayedPlayback({
   videoUrl,
   midx,
   title,
   delayMs = DEFAULT_DELAY_MS,
   enableOpenAI = true,
-  onSubtitleReady,
 }: UseDelayedPlaybackOptions): UseDelayedPlaybackReturn {
   const [isBuffering, setIsBuffering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -150,77 +143,28 @@ export function useDelayedPlayback({
   const bufferStartTimeRef = useRef<number>(0);
   const lastTextRef = useRef<string>('');
   const lastContextRef = useRef<string>('');
-  const playbackStartTimeRef = useRef<number>(0);
+  const bufferCompleteRef = useRef<boolean>(false);
 
-  // 버퍼링 진행률 업데이트
-  useEffect(() => {
-    if (!isBuffering) return;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - bufferStartTimeRef.current;
-      const progress = Math.min(100, (elapsed / delayMs) * 100);
-      setBufferProgress(progress);
-
-      // 지연 시간 완료 시 재생 시작
-      if (elapsed >= delayMs && videoElementRef.current) {
-        console.log('[DelayedPlayback] Buffer complete, starting playback');
-        setIsBuffering(false);
-        setIsPlaying(true);
-        playbackStartTimeRef.current = Date.now();
-        videoElementRef.current.play();
-
-        // 버퍼된 자막을 표시 자막으로 이동
-        setDisplaySubtitles(bufferedSubtitles.map(s => ({
-          id: s.id,
-          sessionId: s.sessionId,
-          startTimeMs: s.startTimeMs,
-          endTimeMs: s.endTimeMs,
-          text: s.text,
-          confidence: s.confidence,
-          speaker: s.speaker,
-          isFinal: true,
-        })));
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isBuffering, delayMs, bufferedSubtitles]);
-
-  // 자막 처리 핸들러
+  // 자막 처리
   const handleTranscript = useCallback(
-    async (text: string, isFinal: boolean, speaker?: number | null, rtzrSeq?: number, startAt?: number, duration?: number) => {
+    async (text: string, isFinal: boolean, speaker?: number | null, _rtzrSeq?: number, startAt?: number, duration?: number) => {
       if (!isFinal || !text.trim()) return;
 
-      // 1단계: 중복 제거
       const cleanedText = removeDuplicates(text.trim());
       if (!cleanedText) return;
 
-      // 유사도 체크
       if (isSimilarToPrevious(cleanedText, lastTextRef.current)) {
-        console.log('[DelayedPlayback] Similar text ignored:', cleanedText.slice(0, 20));
         return;
       }
       lastTextRef.current = cleanedText;
 
-      // 타임스탬프 계산
-      let startTimeMs: number;
-      let endTimeMs: number;
+      // 타임스탬프
+      let startTimeMs = startAt ?? 0;
+      let endTimeMs = (startAt ?? 0) + (duration ?? 3000);
 
-      if (startAt !== undefined && duration !== undefined) {
-        startTimeMs = startAt;
-        endTimeMs = startAt + duration;
-      } else {
-        const currentTimeMs = videoElementRef.current
-          ? Math.floor(videoElementRef.current.currentTime * 1000)
-          : 0;
-        startTimeMs = Math.max(0, currentTimeMs - 3000);
-        endTimeMs = currentTimeMs;
-      }
-
-      // 2단계: OpenAI 보정 (지연 시간 동안 여유 있게 처리)
+      // OpenAI 보정 (버퍼링 중에만)
       let finalText = cleanedText;
-      if (enableOpenAI) {
-        console.log('[DelayedPlayback] Applying OpenAI correction...');
+      if (enableOpenAI && !bufferCompleteRef.current) {
         finalText = await correctWithOpenAI(cleanedText, lastContextRef.current);
         lastContextRef.current = finalText;
       }
@@ -232,39 +176,27 @@ export function useDelayedPlayback({
         startTimeMs,
         endTimeMs,
         text: finalText,
-        confidence: 0.95, // 보정 후 신뢰도 상향
+        confidence: 0.95,
         speaker: speaker ?? null,
         isFinal: true,
         processedAt: Date.now(),
-        corrected: enableOpenAI,
       };
 
-      console.log('[DelayedPlayback] Buffered subtitle:', finalText.slice(0, 30));
+      console.log('[DelayedPlayback] Subtitle:', finalText.slice(0, 40));
 
-      // 버퍼에 추가
       setBufferedSubtitles(prev => [...prev, newSubtitle]);
 
-      // 이미 재생 중이면 바로 표시 자막에도 추가
-      if (isPlaying) {
-        setDisplaySubtitles(prev => [...prev, {
-          id: newSubtitle.id,
-          sessionId: newSubtitle.sessionId,
-          startTimeMs: newSubtitle.startTimeMs,
-          endTimeMs: newSubtitle.endTimeMs,
-          text: newSubtitle.text,
-          confidence: newSubtitle.confidence,
-          speaker: newSubtitle.speaker,
-          isFinal: true,
-        }]);
-        onSubtitleReady?.(newSubtitle);
+      // 재생 중이면 표시 자막에도 추가
+      if (bufferCompleteRef.current) {
+        setDisplaySubtitles(prev => [...prev, newSubtitle]);
       }
 
-      // DB에 저장
+      // DB 저장
       if (sessionIdRef.current) {
         saveSubtitleToDb(newSubtitle, seq);
       }
     },
-    [enableOpenAI, isPlaying, onSubtitleReady]
+    [enableOpenAI]
   );
 
   const handleError = useCallback((err: Error) => {
@@ -284,6 +216,62 @@ export function useDelayedPlayback({
     onError: handleError,
   });
 
+  // 버퍼링 타이머
+  useEffect(() => {
+    if (!isBuffering) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - bufferStartTimeRef.current;
+      const progress = Math.min(100, (elapsed / delayMs) * 100);
+      setBufferProgress(progress);
+
+      // 버퍼링 완료
+      if (elapsed >= delayMs && videoElementRef.current && !bufferCompleteRef.current) {
+        console.log('[DelayedPlayback] Buffer complete!');
+        bufferCompleteRef.current = true;
+
+        const video = videoElementRef.current;
+
+        // 1. 오디오 캡처 중지 (새로운 세션으로 다시 시작해야 함)
+        if (audioCaptureRef.current) {
+          audioCaptureRef.current.stop();
+          audioCaptureRef.current = null;
+        }
+
+        // 2. 영상 처음으로 되감기, 볼륨 복원
+        video.pause();
+        video.currentTime = 0;
+        video.volume = 1; // 볼륨 복원
+
+        // 3. 버퍼된 자막을 표시 자막으로 복사
+        setDisplaySubtitles([...bufferedSubtitles]);
+
+        // 4. 상태 업데이트
+        setIsBuffering(false);
+        setIsPlaying(true);
+
+        // 5. 재생 시작
+        video.play().catch(console.error);
+
+        // 6. 새로운 오디오 캡처 시작 (재생 중인 영상에서)
+        const newAudioCapture = new AudioCapture({
+          sampleRate: 16000,
+          onAudioData: (pcmData) => {
+            sendAudio(pcmData);
+          },
+        });
+        newAudioCapture.startFromVideo(video).then(() => {
+          audioCaptureRef.current = newAudioCapture;
+          console.log('[DelayedPlayback] Playback started with audio capture');
+        });
+
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isBuffering, delayMs, bufferedSubtitles, sendAudio]);
+
   // 지연 재생 시작
   const startDelayedPlayback = useCallback(
     async (videoElement: HTMLVideoElement) => {
@@ -291,11 +279,11 @@ export function useDelayedPlayback({
         setError(null);
         setBufferedSubtitles([]);
         setDisplaySubtitles([]);
+        bufferCompleteRef.current = false;
         videoElementRef.current = videoElement;
-
-        // 영상 일시정지
-        videoElement.pause();
-        videoElement.currentTime = 0;
+        subtitleSeqRef.current = 0;
+        lastTextRef.current = '';
+        lastContextRef.current = '';
 
         console.log(`[DelayedPlayback] Starting with ${delayMs}ms delay`);
 
@@ -310,28 +298,29 @@ export function useDelayedPlayback({
           sessionIdRef.current = crypto.randomUUID();
         }
 
-        // RTZR 토큰 요청
+        // RTZR 토큰
         const tokenResponse = await fetch('/api/auth/rtzr', { method: 'POST' });
         if (!tokenResponse.ok) {
           throw new Error('RTZR 인증 실패');
         }
         const { token } = await tokenResponse.json();
 
-        // 연결 시작
+        // RTZR 연결
         connect(token);
 
-        // 오디오 캡처 시작 (영상은 정지 상태지만 오디오는 캡처)
-        // 참고: 영상이 정지 상태면 오디오도 안 나오므로, 영상을 muted로 재생
-        videoElement.muted = true;
-        videoElement.play();
+        // 영상 설정: volume=0으로 재생 (muted는 Web Audio API 캡처를 차단함)
+        videoElement.currentTime = 0;
+        videoElement.volume = 0; // muted 대신 volume=0 사용
+        videoElement.muted = false;
+        await videoElement.play();
 
+        // 오디오 캡처 시작
         const audioCapture = new AudioCapture({
           sampleRate: 16000,
           onAudioData: (pcmData) => {
             sendAudio(pcmData);
           },
         });
-
         await audioCapture.startFromVideo(videoElement);
         audioCaptureRef.current = audioCapture;
 
@@ -340,17 +329,7 @@ export function useDelayedPlayback({
         bufferStartTimeRef.current = Date.now();
         setBufferProgress(0);
 
-        // 지연 후 영상 unmute 및 재생 위치 조정
-        setTimeout(() => {
-          if (videoElementRef.current) {
-            // 영상 처음으로 되감고 unmute 후 재생
-            videoElementRef.current.pause();
-            videoElementRef.current.currentTime = 0;
-            videoElementRef.current.muted = false;
-          }
-        }, delayMs);
-
-        console.log('[DelayedPlayback] Buffering started');
+        console.log('[DelayedPlayback] Buffering started, video playing muted');
       } catch (err) {
         setError(err instanceof Error ? err.message : '지연 재생 시작 실패');
         setIsBuffering(false);
@@ -359,7 +338,7 @@ export function useDelayedPlayback({
     [connect, sendAudio, delayMs, midx, videoUrl, title]
   );
 
-  // 재생 중지
+  // 중지
   const stopPlayback = useCallback(() => {
     if (audioCaptureRef.current) {
       audioCaptureRef.current.stop();
@@ -371,21 +350,14 @@ export function useDelayedPlayback({
 
     if (videoElementRef.current) {
       videoElementRef.current.pause();
-      videoElementRef.current.muted = false;
+      videoElementRef.current.volume = 1;
     }
 
+    bufferCompleteRef.current = false;
     setIsBuffering(false);
     setIsPlaying(false);
     setBufferProgress(0);
-    console.log('[DelayedPlayback] Playback stopped');
   }, [disconnect, sendEOS]);
-
-  // 특정 시간의 자막 가져오기
-  const getSubtitleAtTime = useCallback((timeMs: number): Subtitle | null => {
-    return displaySubtitles.find(
-      s => timeMs >= s.startTimeMs && timeMs < s.endTimeMs
-    ) || null;
-  }, [displaySubtitles]);
 
   // Cleanup
   useEffect(() => {
@@ -406,6 +378,5 @@ export function useDelayedPlayback({
     error,
     startDelayedPlayback,
     stopPlayback,
-    getSubtitleAtTime,
   };
 }

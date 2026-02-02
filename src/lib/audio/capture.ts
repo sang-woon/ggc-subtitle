@@ -43,8 +43,8 @@ export class AudioCapture {
     // 캐시된 소스 노드가 있는지 확인
     const cached = mediaSourceCache.get(videoElement);
 
-    if (cached) {
-      // 기존 AudioContext와 SourceNode 재사용
+    if (cached && cached.audioContext.state !== 'closed') {
+      // 기존 AudioContext와 SourceNode 재사용 (닫히지 않은 경우만)
       this.audioContext = cached.audioContext;
       this.sourceNode = cached.sourceNode;
       this.usingCachedSource = true;
@@ -54,16 +54,23 @@ export class AudioCapture {
         await this.audioContext.resume();
       }
     } else {
+      // 닫힌 캐시가 있으면 삭제
+      if (cached) {
+        mediaSourceCache.delete(videoElement);
+      }
       // 새로 생성
       this.audioContext = new AudioContext({ sampleRate: this.options.sampleRate });
       this.sourceNode = this.audioContext.createMediaElementSource(videoElement);
-      this.usingCachedSource = false;
 
       // 캐시에 저장
       mediaSourceCache.set(videoElement, {
         audioContext: this.audioContext,
         sourceNode: this.sourceNode,
       });
+
+      // 캐시에 저장했으므로 캐시 모드로 설정 (stop()에서 AudioContext를 닫지 않도록)
+      // createMediaElementSource는 video당 1번만 호출 가능하므로 반드시 보존해야 함
+      this.usingCachedSource = true;
 
       // 오디오가 들리도록 destination에 연결 (최초 1회만)
       this.sourceNode.connect(this.audioContext.destination);

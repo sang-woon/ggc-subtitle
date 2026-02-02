@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { SubtitleOverlay } from '@/components/subtitle/SubtitleOverlay';
@@ -22,6 +22,7 @@ export default function Home() {
   const [urlError, setUrlError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Map<number, string>>(new Map());
   const [subtitleMode, setSubtitleMode] = useState<SubtitleMode>('delayed'); // 기본값: 지연 모드
+  const [lastDisplayedSubtitle, setLastDisplayedSubtitle] = useState<string>(''); // 마지막으로 표시된 자막
   const [preCheckedSubtitles, setPreCheckedSubtitles] = useState<{
     checked: boolean;
     hasSubtitles: boolean;
@@ -131,30 +132,29 @@ export default function Home() {
   const handleVideoReady = useCallback(async (video: HTMLVideoElement) => {
     videoRef.current = video;
 
-    // 미리 확인된 자막 정보가 있으면 그것을 사용
+    // 지연 송출 모드가 선택된 경우, 기존 자막 유무와 관계없이 지연 송출 시작
+    if (subtitleMode === 'delayed') {
+      console.log('[VideoReady] Starting delayed playback mode (forced)');
+      await startDelayedPlayback(video);
+      return;
+    }
+
+    // 실시간 모드: 기존 자막이 있으면 로드
     if (preCheckedSubtitles.checked) {
       console.log(`[VideoReady] Using pre-checked info: hasSubtitles=${preCheckedSubtitles.hasSubtitles}, count=${preCheckedSubtitles.count}, midx=${preCheckedSubtitles.midx}`);
 
       if (preCheckedSubtitles.hasSubtitles && preCheckedSubtitles.midx !== null) {
-        // midx를 직접 전달하여 기존 자막 로드 (상태 업데이트 타이밍 문제 해결)
         console.log('[VideoReady] Loading existing subtitles with direct midx');
         await checkExistingSubtitles(preCheckedSubtitles.midx, videoUrl || undefined);
-        // STT 시작 안 함
         return;
       }
     }
 
-    // 기존 자막이 없는 경우, 선택한 모드에 따라 시작
-    if (subtitleMode === 'delayed') {
-      console.log('[VideoReady] Starting delayed playback mode');
-      await startDelayedPlayback(video);
-    } else {
-      // 실시간 모드
-      const effectiveMidx = preCheckedSubtitles.midx ?? midx;
-      const effectiveVideoUrl = videoUrl || undefined;
-      console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
-      await startSession(video, effectiveMidx, effectiveVideoUrl);
-    }
+    // 실시간 모드: 기존 자막 없으면 STT 시작
+    const effectiveMidx = preCheckedSubtitles.midx ?? midx;
+    const effectiveVideoUrl = videoUrl || undefined;
+    console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
+    await startSession(video, effectiveMidx, effectiveVideoUrl);
   }, [preCheckedSubtitles, midx, videoUrl, subtitleMode, startSession, checkExistingSubtitles, startDelayedPlayback]);
 
   // 시간 업데이트 핸들러
@@ -199,15 +199,28 @@ export default function Home() {
     ? delayedError
     : sessionError;
 
-  // 현재 표시할 자막 찾기
+  // 마지막 자막 업데이트 - 새 자막이 추가될 때마다 갱신
+  useEffect(() => {
+    if (activeSubtitles.length > 0) {
+      const latestSubtitle = activeSubtitles[activeSubtitles.length - 1];
+      setLastDisplayedSubtitle(latestSubtitle.text);
+    }
+  }, [activeSubtitles]);
+
+  // 현재 표시할 자막 찾기 - 마지막 자막을 다음 자막이 나올 때까지 유지
   const getCurrentSubtitle = useCallback((): string => {
+    // 1. 실시간 인식 중인 텍스트가 있으면 우선 표시
     if (activeTranscript) return activeTranscript;
 
+    // 2. 현재 시간에 맞는 자막이 있으면 표시
     const current = activeSubtitles.find(
       (s) => currentTimeMs >= s.startTimeMs && currentTimeMs < s.endTimeMs
     );
-    return current?.text || '';
-  }, [activeSubtitles, currentTimeMs, activeTranscript]);
+    if (current) return current.text;
+
+    // 3. 없으면 마지막으로 표시된 자막 유지 (다음 자막이 나올 때까지)
+    return lastDisplayedSubtitle;
+  }, [activeSubtitles, currentTimeMs, activeTranscript, lastDisplayedSubtitle]);
 
   // 타임라인용 자막 변환
   const timelineSubtitles: TimelineSubtitle[] = activeSubtitles.map((s) => ({
@@ -269,26 +282,14 @@ export default function Home() {
                 {/* 컨트롤 바 */}
                 <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {/* 기존 자막이 있으면 다른 UI 표시 */}
-                    {hasExistingSubtitles && !isCurrentlyActive ? (
-                      <>
-                        <div className="flex items-center gap-2 text-blue-400 text-sm">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                          저장된 자막 {existingSubtitleCount}개
-                        </div>
-                        <button
-                          onClick={toggleSubtitleSession}
-                          disabled={isConnecting}
-                          className={cn(
-                            'px-3 py-1 rounded text-xs font-medium transition-colors',
-                            'bg-gray-600 hover:bg-gray-500 text-white',
-                            isConnecting && 'opacity-50 cursor-not-allowed'
-                          )}
-                        >
-                          {isConnecting ? '연결 중...' : '실시간 자막 추가'}
-                        </button>
-                      </>
-                    ) : (
+                    {/* 기존 자막 정보 표시 */}
+                    {hasExistingSubtitles && !isCurrentlyActive && subtitleMode === 'realtime' && (
+                      <div className="flex items-center gap-2 text-blue-400 text-sm">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                        저장된 자막 {existingSubtitleCount}개
+                      </div>
+                    )}
+                    {(
                       <>
                         {/* 모드 선택 */}
                         {!isCurrentlyActive && (
@@ -380,6 +381,7 @@ export default function Home() {
                     onClick={() => {
                       setVideoUrl(null);
                       setHlsUrl(null);
+                      setLastDisplayedSubtitle('');
                       stopSession();
                       stopDelayedPlayback();
                     }}
