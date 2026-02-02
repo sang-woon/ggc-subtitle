@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
-import { videoSessions } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { videoSessions, subtitles } from '@/db/schema';
+import { eq, desc, count } from 'drizzle-orm';
 
 // 세션 생성
 export async function POST(request: NextRequest) {
@@ -24,9 +24,16 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (existingSession.length > 0) {
+      // 해당 세션의 자막 개수 확인
+      const subtitleCount = await db
+        .select({ count: count() })
+        .from(subtitles)
+        .where(eq(subtitles.sessionId, existingSession[0].id));
+
       return NextResponse.json({
         session: existingSession[0],
         isExisting: true,
+        subtitleCount: subtitleCount[0]?.count || 0,
       });
     }
 

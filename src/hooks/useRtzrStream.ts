@@ -6,11 +6,12 @@ interface UseRtzrStreamOptions {
   sampleRate?: number;
   encoding?: string;
   domain?: string;
-  // 오디오 전송 간격 (ms) - 실시간 모드에서는 100ms 권장
+  // 오디오 전송 간격 (ms) - 실시간 모드에서는 300ms 이상 권장
   sendInterval?: number;
   // 실시간 스트리밍 모드 (true = SSE, false = HTTP 배치)
   realtime?: boolean;
-  onTranscript?: (text: string, isFinal: boolean, speaker?: number | null) => void;
+  // 콜백: text, isFinal, speaker, rtzrSeq, startAt(ms), duration(ms)
+  onTranscript?: (text: string, isFinal: boolean, speaker?: number | null, rtzrSeq?: number, startAt?: number, duration?: number) => void;
   onError?: (error: Error) => void;
 }
 
@@ -35,7 +36,7 @@ export function useRtzrStream(options: UseRtzrStreamOptions = {}): UseRtzrStream
     sampleRate = 16000,
     encoding = 'LINEAR16',
     domain = 'MEETING',
-    sendInterval = 100, // 실시간 모드는 100ms마다 전송
+    sendInterval = 300, // 실시간 모드는 300ms마다 전송 (100ms는 중복 발생)
     realtime = true, // 기본값: 실시간 모드
     onTranscript,
     onError,
@@ -194,13 +195,12 @@ export function useRtzrStream(options: UseRtzrStreamOptions = {}): UseRtzrStream
             sendIntervalRef.current = setInterval(sendAudioRealtime, sendInterval);
           } else if (data.type === 'transcript') {
             if (data.isFinal) {
-              // 최종 결과: 보정된 텍스트
-              onTranscript?.(data.text, true, data.speaker);
+              // 최종 결과: 보정된 텍스트 + RTZR 타임스탬프 정보 전달
+              onTranscript?.(data.text, true, data.speaker, data.seq, data.startAt, data.duration);
               setCurrentTranscript('');
             } else {
-              // 중간 결과: 실시간 업데이트
+              // 중간 결과: 실시간 업데이트 (UI 표시용)
               setCurrentTranscript(data.text);
-              onTranscript?.(data.text, false, data.speaker);
             }
           } else if (data.type === 'error') {
             onError?.(new Error(data.message));

@@ -17,6 +17,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Map<number, string>>(new Map());
+  const [preCheckedSubtitles, setPreCheckedSubtitles] = useState<{
+    checked: boolean;
+    hasSubtitles: boolean;
+    count: number;
+    midx: number | null;
+  }>({ checked: false, hasSubtitles: false, count: 0, midx: null });
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const {
@@ -26,25 +32,61 @@ export default function Home() {
     currentTranscript,
     error: sessionError,
     dbSessionId,
+    hasExistingSubtitles,
+    existingSubtitleCount,
     startSession,
     stopSession,
     loadExistingSubtitles,
+    checkExistingSubtitles,
+    startRealtimeSession,
   } = useSubtitleSession({
     videoUrl: videoUrl || '',
     midx,
     title: `KMS 영상 ${midx || ''}`,
   });
 
-  // URL 제출 핸들러
+  // URL 제출 핸들러 - 비디오 로드 전에 기존 자막 확인
   const handleUrlSubmit = useCallback(async (url: string, extractedMidx: number | null) => {
     setIsLoading(true);
     setUrlError(null);
+    setPreCheckedSubtitles({ checked: false, hasSubtitles: false, count: 0, midx: null });
 
     try {
+      // 1. 먼저 기존 자막이 있는지 확인 (비디오 로드 전)
+      if (extractedMidx !== null) {
+        console.log('[Pre-check] Checking existing subtitles for midx:', extractedMidx);
+        const sessionResponse = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kmsUrl: url,
+            midx: extractedMidx,
+            title: `KMS 영상 ${extractedMidx}`,
+            isLive: true,
+          }),
+        });
+
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json();
+          const subtitleCount = sessionData.subtitleCount || 0;
+          const hasSubtitles = sessionData.isExisting && subtitleCount > 0;
+
+          console.log(`[Pre-check] Found session: isExisting=${sessionData.isExisting}, subtitleCount=${subtitleCount}`);
+
+          setPreCheckedSubtitles({
+            checked: true,
+            hasSubtitles,
+            count: subtitleCount,
+            midx: extractedMidx,
+          });
+        }
+      }
+
+      // 2. 상태 업데이트
       setVideoUrl(url);
       setMidx(extractedMidx);
 
-      // KMS 페이지에서 비디오 URL 추출
+      // 3. KMS 페이지에서 비디오 URL 추출
       const response = await fetch(`/api/kms/video-url?url=${encodeURIComponent(url)}`);
       const data = await response.json();
 
@@ -52,7 +94,7 @@ export default function Home() {
         throw new Error(data.error || '비디오 URL을 가져올 수 없습니다');
       }
 
-      // 프록시 URL 사용 (CORS 우회)
+      // 4. 프록시 URL 사용 (CORS 우회)
       const proxyUrl = `/api/kms/proxy?url=${encodeURIComponent(data.videoUrl)}`;
       setHlsUrl(proxyUrl);
     } catch (err) {
@@ -63,9 +105,29 @@ export default function Home() {
   }, []);
 
   // 비디오 준비 완료 핸들러
-  const handleVideoReady = useCallback((video: HTMLVideoElement) => {
+  const handleVideoReady = useCallback(async (video: HTMLVideoElement) => {
     videoRef.current = video;
-  }, []);
+
+    // 미리 확인된 자막 정보가 있으면 그것을 사용
+    if (preCheckedSubtitles.checked) {
+      console.log(`[VideoReady] Using pre-checked info: hasSubtitles=${preCheckedSubtitles.hasSubtitles}, count=${preCheckedSubtitles.count}, midx=${preCheckedSubtitles.midx}`);
+
+      if (preCheckedSubtitles.hasSubtitles && preCheckedSubtitles.midx !== null) {
+        // midx를 직접 전달하여 기존 자막 로드 (상태 업데이트 타이밍 문제 해결)
+        console.log('[VideoReady] Loading existing subtitles with direct midx');
+        await checkExistingSubtitles(preCheckedSubtitles.midx, videoUrl || undefined);
+        // STT 시작 안 함
+        return;
+      }
+    }
+
+    // pre-check 정보가 없거나 자막이 없는 경우, 세션 시작 (STT 포함)
+    // midx를 직접 전달하여 상태 타이밍 문제 해결
+    const effectiveMidx = preCheckedSubtitles.midx ?? midx;
+    const effectiveVideoUrl = videoUrl || undefined;
+    console.log(`[VideoReady] Starting full session with midx=${effectiveMidx}`);
+    await startSession(video, effectiveMidx, effectiveVideoUrl);
+  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles]);
 
   // 시간 업데이트 핸들러
   const handleTimeUpdate = useCallback((timeMs: number) => {
@@ -88,14 +150,15 @@ export default function Home() {
     });
   }, []);
 
-  // 자막 세션 토글
+  // 자막 세션 토글 (실시간 STT)
   const toggleSubtitleSession = useCallback(async () => {
     if (isActive) {
       stopSession();
     } else if (videoRef.current) {
-      await startSession(videoRef.current);
+      // 기존 자막이 있어도 실시간 STT 강제 시작
+      await startRealtimeSession(videoRef.current);
     }
-  }, [isActive, startSession, stopSession]);
+  }, [isActive, startRealtimeSession, stopSession]);
 
   // 현재 표시할 자막 찾기
   const getCurrentSubtitle = useCallback((): string => {
@@ -162,28 +225,51 @@ export default function Home() {
                 {/* 컨트롤 바 */}
                 <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <button
-                      onClick={toggleSubtitleSession}
-                      disabled={isConnecting}
-                      className={cn(
-                        'px-4 py-1.5 rounded text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-red-600 hover:bg-red-700 text-white'
-                          : 'bg-green-600 hover:bg-green-700 text-white',
-                        isConnecting && 'opacity-50 cursor-not-allowed'
-                      )}
-                    >
-                      {isConnecting
-                        ? '연결 중...'
-                        : isActive
-                        ? '자막 중지'
-                        : '자막 시작'}
-                    </button>
-                    {isActive && (
-                      <div className="flex items-center gap-2 text-green-400 text-sm">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        실시간 자막 활성화
-                      </div>
+                    {/* 기존 자막이 있으면 다른 UI 표시 */}
+                    {hasExistingSubtitles && !isActive ? (
+                      <>
+                        <div className="flex items-center gap-2 text-blue-400 text-sm">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                          저장된 자막 {existingSubtitleCount}개
+                        </div>
+                        <button
+                          onClick={toggleSubtitleSession}
+                          disabled={isConnecting}
+                          className={cn(
+                            'px-3 py-1 rounded text-xs font-medium transition-colors',
+                            'bg-gray-600 hover:bg-gray-500 text-white',
+                            isConnecting && 'opacity-50 cursor-not-allowed'
+                          )}
+                        >
+                          {isConnecting ? '연결 중...' : '실시간 자막 추가'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={toggleSubtitleSession}
+                          disabled={isConnecting}
+                          className={cn(
+                            'px-4 py-1.5 rounded text-sm font-medium transition-colors',
+                            isActive
+                              ? 'bg-red-600 hover:bg-red-700 text-white'
+                              : 'bg-green-600 hover:bg-green-700 text-white',
+                            isConnecting && 'opacity-50 cursor-not-allowed'
+                          )}
+                        >
+                          {isConnecting
+                            ? '연결 중...'
+                            : isActive
+                            ? '자막 중지'
+                            : '실시간 자막 시작'}
+                        </button>
+                        {isActive && (
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                            실시간 자막 활성화
+                          </div>
+                        )}
+                      </>
                     )}
                     <span className="text-gray-400 text-xs">
                       💡 영상 속도 조절: 오른쪽 상단 버튼
