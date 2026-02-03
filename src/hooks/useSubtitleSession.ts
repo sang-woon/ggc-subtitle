@@ -6,6 +6,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRtzrStream } from './useRtzrStream';
 import { AudioCapture } from '@/lib/audio/capture';
+import { generateUUID } from '@/lib/utils';
 import type { Subtitle, VideoSession } from '@/types';
 
 interface UseSubtitleSessionOptions {
@@ -211,6 +212,9 @@ export function useSubtitleSession({
   const sentenceStartTimeRef = useRef<number>(0);
   const currentSpeakerRef = useRef<number | null>(null);
 
+  // 오디오 캡처 시작 시점의 비디오 시간 (RTZR 타임스탬프 오프셋용)
+  const videoStartTimeRef = useRef<number>(0);
+
   // 중복 방지용: RTZR seq 번호 및 마지막 텍스트 추적
   const lastRtzrSeqRef = useRef<number>(-1);
   const lastTextRef = useRef<string>('');
@@ -243,14 +247,15 @@ export function useSubtitleSession({
       }
       lastTextRef.current = cleanedText;
 
-      // 타임스탬프 계산: RTZR의 startAt/duration 사용 (더 정확함)
+      // 타임스탬프 계산: RTZR의 startAt/duration + 비디오 시작 오프셋
       let startTimeMs: number;
       let endTimeMs: number;
 
       if (startAt !== undefined && duration !== undefined) {
-        // RTZR에서 제공한 시간 사용 (밀리초 단위)
-        startTimeMs = startAt;
-        endTimeMs = startAt + duration;
+        // RTZR 시간 + 비디오 시작 시점 오프셋 (영상 절대 시간으로 변환)
+        const videoOffset = videoStartTimeRef.current;
+        startTimeMs = startAt + videoOffset;
+        endTimeMs = startAt + duration + videoOffset;
       } else {
         // 폴백: 비디오 현재 시간 사용
         const currentTimeMs = videoElementRef.current
@@ -280,7 +285,7 @@ export function useSubtitleSession({
       // 보정된 자막으로 추가
       const seq = subtitleSeqRef.current++;
       const newSubtitle: Subtitle = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         sessionId: sessionIdRef.current || '',
         startTimeMs,
         endTimeMs,
@@ -392,14 +397,17 @@ export function useSubtitleSession({
         setDbSessionId(sessionResult.session.id);
       } else {
         console.warn('[T1.4] Failed to create DB session, using local session ID');
-        sessionIdRef.current = crypto.randomUUID();
+        sessionIdRef.current = generateUUID();
       }
     } else if (!sessionIdRef.current) {
-      sessionIdRef.current = crypto.randomUUID();
+      sessionIdRef.current = generateUUID();
     }
 
-    sentenceStartTimeRef.current = Math.floor(videoElement.currentTime * 1000);
+    // 비디오 시작 시점 저장 (RTZR 타임스탬프 오프셋용)
+    videoStartTimeRef.current = Math.floor(videoElement.currentTime * 1000);
+    sentenceStartTimeRef.current = videoStartTimeRef.current;
     currentSpeakerRef.current = null;
+    console.log('[T1.4] Video start time offset:', videoStartTimeRef.current, 'ms');
 
     // RTZR 토큰 요청
     const tokenResponse = await fetch('/api/auth/rtzr', { method: 'POST' });

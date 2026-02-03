@@ -34,8 +34,8 @@ export function UrlInput({ onSubmit, isLoading = false, className }: UrlInputPro
 
   return (
     <form onSubmit={handleSubmit} className={cn('w-full', className)}>
-      <div className="flex flex-col gap-2">
-        <label htmlFor="url-input" className="text-sm font-medium text-gray-700">
+      <div className="flex flex-col gap-3">
+        <label htmlFor="url-input" className="text-sm font-medium text-gray-200">
           영상 URL
         </label>
         <div className="flex gap-2">
@@ -46,9 +46,10 @@ export function UrlInput({ onSubmit, isLoading = false, className }: UrlInputPro
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://kms.ggc.go.kr/caster/player/vodViewer.do?midx=..."
             className={cn(
-              'flex-1 px-4 py-3 border rounded-lg',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-              error ? 'border-red-300' : 'border-gray-300'
+              'flex-1 px-4 py-3 rounded-lg',
+              'bg-gray-700 text-white placeholder-gray-400',
+              'border-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
+              error ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
             )}
             disabled={isLoading}
           />
@@ -72,8 +73,8 @@ export function UrlInput({ onSubmit, isLoading = false, className }: UrlInputPro
             )}
           </button>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <p className="text-xs text-gray-500">
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <p className="text-xs text-gray-400">
           경기도의회 KMS 영상 URL을 입력하세요.
         </p>
       </div>

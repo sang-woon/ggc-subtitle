@@ -79,6 +79,12 @@ export async function GET(request: NextRequest) {
     // 4. data 속성에서 추출
     const dataMatch = html.match(/data-video-url=["']([^"']+)["']/);
 
+    // 5. m3u8 HLS 스트림 URL 추출 (DVR 녹화 영상용)
+    const m3u8Match = html.match(/m3u8Url\s*=\s*["'](https:\/\/[^"']+\.m3u8[^"']*)["']/);
+
+    // 6. m3u8 기본 URL만 추출 (DVR 파라미터 제외)
+    const m3u8BaseMatch = html.match(/["'](https:\/\/stream\d+\.cdn\.gov-ntruss\.com\/live\/[^"']+\/playlist\.m3u8)/);
+
     let videoUrl = null;
 
     if (mp4Match) {
@@ -95,6 +101,11 @@ export async function GET(request: NextRequest) {
       videoUrl = dataMatch[1].startsWith('http')
         ? dataMatch[1]
         : `https://kms.ggc.go.kr${dataMatch[1]}`;
+    } else if (m3u8Match) {
+      // m3u8 URL에서 DVR 파라미터 부분 제거하고 기본 URL만 사용
+      videoUrl = m3u8Match[1].split('?')[0] + '?DVR';
+    } else if (m3u8BaseMatch) {
+      videoUrl = m3u8BaseMatch[1] + '?DVR';
     }
 
     // 제목 추출

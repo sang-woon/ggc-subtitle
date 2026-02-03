@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { useEffect, useState, useRef } from 'react';
 
 interface SubtitleOverlayProps {
   text: string;
@@ -9,48 +10,77 @@ interface SubtitleOverlayProps {
 }
 
 /**
- * YouTube 스타일 자막 오버레이
- * - 최대 3줄로 제한
- * - 중간 결과(isInterim)는 회색으로 구분
- * - 텍스트가 길면 뒤에서 자르고 ... 추가
+ * 실시간 자막 오버레이
+ * - 왼쪽 정렬
+ * - 보정 중(노란색): 실시간 업데이트
+ * - 보정 완료(흰색): 확정된 자막 유지
  */
-export function SubtitleOverlay({ text, isInterim = false, className }: SubtitleOverlayProps) {
-  if (!text) return null;
+export function SubtitleOverlay({
+  text,
+  isInterim = false,
+  className,
+}: SubtitleOverlayProps) {
+  // 마지막으로 확정된 자막 (text가 비어도 유지)
+  const [lastConfirmedText, setLastConfirmedText] = useState<string>('');
+  const prevIsInterimRef = useRef<boolean>(true);
+  const prevTextRef = useRef<string>('');
 
-  // 한 줄당 대략 40자 정도, 3줄이면 120자
-  const maxChars = 120;
-  const displayText = text.length > maxChars
-    ? '...' + text.slice(-maxChars)  // 최신 내용 보여주기 위해 뒤에서 자름
-    : text;
+  useEffect(() => {
+    // 보정 완료 감지: isInterim이 true → false로 변경되고, 이전 텍스트가 있을 때
+    if (prevIsInterimRef.current && !isInterim && prevTextRef.current) {
+      const confirmedText = prevTextRef.current.length > 60
+        ? prevTextRef.current.slice(-60)
+        : prevTextRef.current;
+      setLastConfirmedText(confirmedText);
+    }
+
+    // 새로운 보정 시작: isInterim이 false → true로 변경될 때
+    // 이전 확정 텍스트는 유지 (롤링 효과용)
+
+    prevIsInterimRef.current = isInterim;
+    if (text) {
+      prevTextRef.current = text;
+    }
+  }, [text, isInterim]);
+
+  // 표시할 텍스트 결정
+  const displayText = text || lastConfirmedText;
+
+  // 아무것도 표시할 게 없으면 숨김
+  if (!displayText) return null;
+
+  // 현재 표시할 텍스트 (잘라서 표시)
+  const currentText = displayText.length > 60 ? displayText.slice(-60) : displayText;
+
+  // 현재 상태: text가 있고 isInterim이면 보정 중, 아니면 확정
+  const isCurrentlyInterim = isInterim && text;
 
   return (
     <div
       className={cn(
-        'absolute bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl text-center',
+        'absolute bottom-12 left-4 w-[90%] max-w-4xl',
         className
       )}
     >
       <div
-        className={cn(
-          'inline-block px-5 py-3 rounded-lg text-lg font-medium',
-          'bg-black/85 shadow-lg backdrop-blur-sm',
-          // 보정 완료: 흰색, 보정 중: 회색
-          isInterim ? 'text-gray-400' : 'text-white'
-        )}
-        style={{
-          textShadow: '1px 1px 2px rgba(0, 0, 0, 0.9)',
-          maxHeight: '6em', // 약 3줄 (lineHeight 2 기준)
-          lineHeight: '2',
-          overflow: 'hidden',
-          display: '-webkit-box',
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical',
-        }}
+        className="px-5 py-3 rounded-lg bg-black/85 shadow-lg backdrop-blur-sm"
+        style={{ minHeight: '2em' }}
       >
-        {isInterim && (
-          <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mr-2 animate-pulse" />
-        )}
-        {displayText}
+        <div
+          className={cn(
+            'text-left text-lg font-medium transition-colors duration-200',
+            isCurrentlyInterim ? 'text-yellow-400' : 'text-white'
+          )}
+          style={{
+            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.9)',
+            lineHeight: '1.8',
+          }}
+        >
+          {isCurrentlyInterim && (
+            <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse" />
+          )}
+          {currentText}
+        </div>
       </div>
     </div>
   );

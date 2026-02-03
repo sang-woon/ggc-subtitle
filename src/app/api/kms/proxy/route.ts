@@ -10,8 +10,11 @@ const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL, // 프로덕션 URL
 ].filter(Boolean) as string[];
 
-// 허용된 KMS 도메인 (SSRF 방지)
+// 허용된 도메인 (SSRF 방지)
+// - kms.ggc.go.kr: KMS VOD 서버 (MP4)
+// - stream**.cdn.gov-ntruss.com: 라이브 스트리밍 CDN (HLS m3u8)
 const ALLOWED_KMS_HOSTS = ['kms.ggc.go.kr'];
+const ALLOWED_CDN_PATTERN = /^stream\d+\.cdn\.gov-ntruss\.com$/;
 
 // Origin 검증 헬퍼 함수
 function getAllowedOrigin(request: NextRequest): string | null {
@@ -37,7 +40,9 @@ function getAllowedOrigin(request: NextRequest): string | null {
 function isValidKmsUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return ALLOWED_KMS_HOSTS.includes(parsed.hostname);
+    // KMS 도메인 또는 CDN 스트리밍 도메인 허용
+    return ALLOWED_KMS_HOSTS.includes(parsed.hostname) ||
+           ALLOWED_CDN_PATTERN.test(parsed.hostname);
   } catch {
     return false;
   }
@@ -59,7 +64,7 @@ export async function GET(request: NextRequest) {
     // @SECURITY A10 - SSRF 방지: 정확한 URL 파싱 및 호스트 검증
     if (!isValidKmsUrl(videoUrl)) {
       return NextResponse.json(
-        { error: 'Invalid KMS URL - only kms.ggc.go.kr is allowed' },
+        { error: 'Invalid URL - only kms.ggc.go.kr and stream CDN domains are allowed' },
         { status: 400 }
       );
     }
@@ -87,18 +92,16 @@ export async function GET(request: NextRequest) {
 
     // 응답 헤더 설정
     const responseHeaders = new Headers();
-    responseHeaders.set('Content-Type', response.headers.get('Content-Type') || 'video/mp4');
+    // m3u8 파일 타입 처리
+    let contentType = response.headers.get('Content-Type') || 'video/mp4';
+    const isM3u8 = videoUrl.includes('.m3u8');
+    if (isM3u8) {
+      contentType = 'application/vnd.apple.mpegurl';
+    } else if (videoUrl.includes('.ts')) {
+      contentType = 'video/mp2t';
+    }
+    responseHeaders.set('Content-Type', contentType);
     responseHeaders.set('Accept-Ranges', 'bytes');
-
-    const contentLength = response.headers.get('Content-Length');
-    if (contentLength) {
-      responseHeaders.set('Content-Length', contentLength);
-    }
-
-    const contentRange = response.headers.get('Content-Range');
-    if (contentRange) {
-      responseHeaders.set('Content-Range', contentRange);
-    }
 
     // @SECURITY A05 - CORS 헤더 (Origin 기반 검증)
     const allowedOrigin = getAllowedOrigin(request);
@@ -110,6 +113,44 @@ export async function GET(request: NextRequest) {
     }
     responseHeaders.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     responseHeaders.set('Access-Control-Allow-Headers', 'Range');
+
+    // m3u8 파일의 상대 URL을 프록시 URL로 변환
+    if (isM3u8) {
+      const text = await response.text();
+      const baseUrl = new URL(videoUrl);
+      const basePath = baseUrl.href.substring(0, baseUrl.href.lastIndexOf('/') + 1);
+
+      // 상대 경로를 절대 프록시 URL로 변환
+      const modifiedText = text.split('\n').map(line => {
+        const trimmed = line.trim();
+        // 주석이나 빈 줄은 그대로
+        if (!trimmed || trimmed.startsWith('#')) {
+          return line;
+        }
+        // 이미 절대 URL인 경우
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          return `/api/kms/proxy?url=${encodeURIComponent(trimmed)}`;
+        }
+        // 상대 경로인 경우 절대 URL로 변환 후 프록시 URL로
+        const absoluteUrl = new URL(trimmed, basePath).href;
+        return `/api/kms/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+      }).join('\n');
+
+      return new NextResponse(modifiedText, {
+        status: response.status,
+        headers: responseHeaders,
+      });
+    }
+
+    const contentLength = response.headers.get('Content-Length');
+    if (contentLength) {
+      responseHeaders.set('Content-Length', contentLength);
+    }
+
+    const contentRange = response.headers.get('Content-Range');
+    if (contentRange) {
+      responseHeaders.set('Content-Range', contentRange);
+    }
 
     return new NextResponse(response.body, {
       status: response.status,

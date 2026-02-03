@@ -6,14 +6,15 @@ import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { SubtitleOverlay } from '@/components/subtitle/SubtitleOverlay';
 import { SubtitleTimeline, TimelineSubtitle } from '@/components/subtitle/SubtitleTimeline';
 import { UrlInput } from '@/components/ui/UrlInput';
+import { LiveChannelList } from '@/components/live/LiveChannelList';
 import { useSubtitleSession } from '@/hooks/useSubtitleSession';
-import { useDelayedPlayback } from '@/hooks/useDelayedPlayback';
 import { cn } from '@/lib/utils';
 
-// 자막 모드 타입
-type SubtitleMode = 'realtime' | 'delayed';
+// 입력 방법 타입
+type InputMode = 'url' | 'live';
 
 export default function Home() {
+  const [inputMode, setInputMode] = useState<InputMode>('live'); // 기본값: 생중계
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(null);
   const [midx, setMidx] = useState<number | null>(null);
@@ -21,8 +22,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Map<number, string>>(new Map());
-  const [subtitleMode, setSubtitleMode] = useState<SubtitleMode>('delayed'); // 기본값: 지연 모드
-  const [lastDisplayedSubtitle, setLastDisplayedSubtitle] = useState<string>(''); // 마지막으로 표시된 자막
+  const [lastDisplayedSubtitle, setLastDisplayedSubtitle] = useState<string>('');
   const [preCheckedSubtitles, setPreCheckedSubtitles] = useState<{
     checked: boolean;
     hasSubtitles: boolean;
@@ -51,23 +51,23 @@ export default function Home() {
     title: `KMS 영상 ${midx || ''}`,
   });
 
-  // 지연 송출 모드 훅
-  const {
-    isBuffering,
-    isPlaying: isDelayedPlaying,
-    bufferProgress,
-    displaySubtitles: delayedSubtitles,
-    currentTranscript: delayedTranscript,
-    error: delayedError,
-    startDelayedPlayback,
-    stopPlayback: stopDelayedPlayback,
-  } = useDelayedPlayback({
-    videoUrl: videoUrl || '',
-    midx,
-    title: `KMS 영상 ${midx || ''}`,
-    delayMs: 15000, // 15초 지연
-    enableOpenAI: true, // OpenAI 보정 활성화
-  });
+  // 생중계 채널 선택 핸들러
+  const handleLiveChannelSelect = useCallback(async (streamUrl: string) => {
+    setIsLoading(true);
+    setUrlError(null);
+    setPreCheckedSubtitles({ checked: false, hasSubtitles: false, count: 0, midx: null });
+
+    try {
+      // 생중계는 midx 없이 스트림 URL 직접 사용
+      setVideoUrl(streamUrl);
+      setMidx(null);
+      setHlsUrl(streamUrl); // HLS URL 직접 사용 (CORS 필요 없음)
+    } catch (err) {
+      setUrlError(err instanceof Error ? err.message : '스트림 연결 실패');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // URL 제출 핸들러 - 비디오 로드 전에 기존 자막 확인
   const handleUrlSubmit = useCallback(async (url: string, extractedMidx: number | null) => {
@@ -132,14 +132,7 @@ export default function Home() {
   const handleVideoReady = useCallback(async (video: HTMLVideoElement) => {
     videoRef.current = video;
 
-    // 지연 송출 모드가 선택된 경우, 기존 자막 유무와 관계없이 지연 송출 시작
-    if (subtitleMode === 'delayed') {
-      console.log('[VideoReady] Starting delayed playback mode (forced)');
-      await startDelayedPlayback(video);
-      return;
-    }
-
-    // 실시간 모드: 기존 자막이 있으면 로드
+    // 기존 자막이 있으면 로드
     if (preCheckedSubtitles.checked) {
       console.log(`[VideoReady] Using pre-checked info: hasSubtitles=${preCheckedSubtitles.hasSubtitles}, count=${preCheckedSubtitles.count}, midx=${preCheckedSubtitles.midx}`);
 
@@ -150,12 +143,12 @@ export default function Home() {
       }
     }
 
-    // 실시간 모드: 기존 자막 없으면 STT 시작
+    // 기존 자막 없으면 실시간 STT 시작
     const effectiveMidx = preCheckedSubtitles.midx ?? midx;
     const effectiveVideoUrl = videoUrl || undefined;
     console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
     await startSession(video, effectiveMidx, effectiveVideoUrl);
-  }, [preCheckedSubtitles, midx, videoUrl, subtitleMode, startSession, checkExistingSubtitles, startDelayedPlayback]);
+  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles]);
 
   // 시간 업데이트 핸들러
   const handleTimeUpdate = useCallback((timeMs: number) => {
@@ -188,42 +181,33 @@ export default function Home() {
     }
   }, [isActive, startRealtimeSession, stopSession]);
 
-  // 현재 모드에 따른 자막과 트랜스크립트
-  const activeSubtitles = subtitleMode === 'delayed' && isDelayedPlaying
-    ? delayedSubtitles
-    : subtitles;
-  const activeTranscript = subtitleMode === 'delayed'
-    ? delayedTranscript
-    : currentTranscript;
-  const activeError = subtitleMode === 'delayed'
-    ? delayedError
-    : sessionError;
-
   // 마지막 자막 업데이트 - 새 자막이 추가될 때마다 갱신
   useEffect(() => {
-    if (activeSubtitles.length > 0) {
-      const latestSubtitle = activeSubtitles[activeSubtitles.length - 1];
+    if (subtitles.length > 0) {
+      const latestSubtitle = subtitles[subtitles.length - 1];
       setLastDisplayedSubtitle(latestSubtitle.text);
     }
-  }, [activeSubtitles]);
+  }, [subtitles]);
 
-  // 현재 표시할 자막 찾기 - 마지막 자막을 다음 자막이 나올 때까지 유지
+  // 현재 표시할 자막 찾기
   const getCurrentSubtitle = useCallback((): string => {
-    // 1. 실시간 인식 중인 텍스트가 있으면 우선 표시
-    if (activeTranscript) return activeTranscript;
+    // 실시간 모드: currentTranscript만 표시 (SubtitleOverlay가 확정된 자막 관리)
+    if (isActive) {
+      return currentTranscript || '';
+    }
 
-    // 2. 현재 시간에 맞는 자막이 있으면 표시
-    const current = activeSubtitles.find(
+    // 재생 모드: 시간 기반 자막 검색
+    const current = subtitles.find(
       (s) => currentTimeMs >= s.startTimeMs && currentTimeMs < s.endTimeMs
     );
     if (current) return current.text;
 
-    // 3. 없으면 마지막으로 표시된 자막 유지 (다음 자막이 나올 때까지)
+    // 없으면 마지막으로 표시된 자막 유지
     return lastDisplayedSubtitle;
-  }, [activeSubtitles, currentTimeMs, activeTranscript, lastDisplayedSubtitle]);
+  }, [subtitles, currentTimeMs, currentTranscript, lastDisplayedSubtitle, isActive]);
 
   // 타임라인용 자막 변환
-  const timelineSubtitles: TimelineSubtitle[] = activeSubtitles.map((s) => ({
+  const timelineSubtitles: TimelineSubtitle[] = subtitles.map((s) => ({
     id: s.id,
     startTimeMs: s.startTimeMs,
     endTimeMs: s.endTimeMs,
@@ -232,17 +216,22 @@ export default function Home() {
     isEdited: false,
   }));
 
-  // 현재 활성 상태 (실시간 또는 지연)
-  const isCurrentlyActive = subtitleMode === 'delayed'
-    ? (isBuffering || isDelayedPlaying)
-    : isActive;
-
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 헤더 */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1
+            className="text-xl font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+            onClick={() => {
+              // 메인으로 돌아가기: 상태 초기화
+              setVideoUrl(null);
+              setHlsUrl(null);
+              setMidx(null);
+              setInputMode('live');
+              stopSession();
+            }}
+          >
             경기도의회 실시간 자막 시스템
           </h1>
           <div className="flex items-center gap-4">
@@ -263,13 +252,67 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* URL 입력 */}
+        {/* 입력 방법 선택 */}
         {!videoUrl && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <UrlInput onSubmit={handleUrlSubmit} isLoading={isLoading} />
-            {urlError && (
-              <p className="mt-2 text-sm text-red-600">{urlError}</p>
-            )}
+          <div className="bg-gray-900 rounded-lg shadow mb-6 overflow-hidden">
+            {/* 탭 헤더 */}
+            <div className="flex border-b border-gray-700">
+              <button
+                onClick={() => setInputMode('live')}
+                className={cn(
+                  'flex-1 px-6 py-4 text-sm font-medium transition-colors relative',
+                  inputMode === 'live'
+                    ? 'text-white bg-gray-800'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                )}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  경기도의회 생중계
+                </span>
+                {inputMode === 'live' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500" />
+                )}
+              </button>
+              <button
+                onClick={() => setInputMode('url')}
+                className={cn(
+                  'flex-1 px-6 py-4 text-sm font-medium transition-colors relative',
+                  inputMode === 'url'
+                    ? 'text-white bg-gray-800'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                )}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  URL 직접 입력
+                </span>
+                {inputMode === 'url' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                )}
+              </button>
+            </div>
+
+            {/* 탭 컨텐츠 */}
+            <div className="p-6">
+              {inputMode === 'live' ? (
+                <LiveChannelList
+                  onSelectChannel={handleLiveChannelSelect}
+                  className="-m-2"
+                />
+              ) : (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <UrlInput onSubmit={handleUrlSubmit} isLoading={isLoading} />
+                </div>
+              )}
+              {urlError && (
+                <p className="mt-4 text-sm text-red-400 bg-red-900/20 p-3 rounded">{urlError}</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -283,99 +326,42 @@ export default function Home() {
                 <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {/* 기존 자막 정보 표시 */}
-                    {hasExistingSubtitles && !isCurrentlyActive && subtitleMode === 'realtime' && (
+                    {hasExistingSubtitles && !isActive && (
                       <div className="flex items-center gap-2 text-blue-400 text-sm">
                         <div className="w-2 h-2 bg-blue-400 rounded-full" />
                         저장된 자막 {existingSubtitleCount}개
                       </div>
                     )}
-                    {(
-                      <>
-                        {/* 모드 선택 */}
-                        {!isCurrentlyActive && (
-                          <div className="flex items-center gap-2 bg-gray-700 rounded px-2 py-1">
-                            <button
-                              onClick={() => setSubtitleMode('delayed')}
-                              className={cn(
-                                'px-2 py-0.5 rounded text-xs transition-colors',
-                                subtitleMode === 'delayed'
-                                  ? 'bg-purple-600 text-white'
-                                  : 'text-gray-400 hover:text-white'
-                              )}
-                            >
-                              지연 송출
-                            </button>
-                            <button
-                              onClick={() => setSubtitleMode('realtime')}
-                              className={cn(
-                                'px-2 py-0.5 rounded text-xs transition-colors',
-                                subtitleMode === 'realtime'
-                                  ? 'bg-green-600 text-white'
-                                  : 'text-gray-400 hover:text-white'
-                              )}
-                            >
-                              실시간
-                            </button>
-                          </div>
-                        )}
 
-                        {/* 버퍼링 상태 표시 (지연 모드) */}
-                        {isBuffering && (
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 text-purple-400 text-sm">
-                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-                              버퍼링 중...
-                            </div>
-                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-purple-500 transition-all duration-100"
-                                style={{ width: `${bufferProgress}%` }}
-                              />
-                            </div>
-                            <span className="text-purple-400 text-xs">
-                              {Math.round(bufferProgress)}%
-                            </span>
-                          </div>
-                        )}
-
-                        {/* 지연 재생 중 상태 */}
-                        {isDelayedPlaying && (
-                          <div className="flex items-center gap-2 text-purple-400 text-sm">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-                            지연 송출 중 (15초 지연)
-                          </div>
-                        )}
-
-                        {/* 실시간 모드 상태 */}
-                        {subtitleMode === 'realtime' && isActive && (
-                          <div className="flex items-center gap-2 text-green-400 text-sm">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                            실시간 자막 활성화
-                          </div>
-                        )}
-
-                        {/* 중지 버튼 */}
-                        {isCurrentlyActive && (
-                          <button
-                            onClick={() => {
-                              if (subtitleMode === 'delayed') {
-                                stopDelayedPlayback();
-                              } else {
-                                stopSession();
-                              }
-                            }}
-                            className="px-3 py-1 rounded text-xs font-medium bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            자막 중지
-                          </button>
-                        )}
-                      </>
+                    {/* 실시간 자막 상태 */}
+                    {isActive && (
+                      <div className="flex items-center gap-2 text-green-400 text-sm">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        실시간 자막 활성화
+                      </div>
                     )}
-                    {!isBuffering && (
-                      <span className="text-gray-400 text-xs">
-                        {subtitleMode === 'delayed' ? '🎯 15초 지연으로 보정된 자막' : '💡 영상 속도 조절: 오른쪽 상단'}
-                      </span>
+
+                    {/* 연결 중 상태 */}
+                    {isConnecting && (
+                      <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                        연결 중...
+                      </div>
                     )}
+
+                    {/* 중지 버튼 */}
+                    {isActive && (
+                      <button
+                        onClick={stopSession}
+                        className="px-3 py-1 rounded text-xs font-medium bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        자막 중지
+                      </button>
+                    )}
+
+                    <span className="text-gray-400 text-xs">
+                      💡 영상 속도 조절: 오른쪽 상단
+                    </span>
                   </div>
                   <button
                     onClick={() => {
@@ -383,7 +369,6 @@ export default function Home() {
                       setHlsUrl(null);
                       setLastDisplayedSubtitle('');
                       stopSession();
-                      stopDelayedPlayback();
                     }}
                     className="text-gray-400 hover:text-white text-sm"
                   >
@@ -409,9 +394,9 @@ export default function Home() {
                 </div>
 
                 {/* 세션 에러 표시 */}
-                {activeError && (
+                {sessionError && (
                   <div className="bg-red-50 border-t border-red-200 px-4 py-3">
-                    <p className="text-sm text-red-700">{activeError}</p>
+                    <p className="text-sm text-red-700">{sessionError}</p>
                   </div>
                 )}
               </div>
@@ -423,14 +408,13 @@ export default function Home() {
                 <div className="p-4 border-b">
                   <h2 className="font-semibold">자막 목록</h2>
                   <p className="text-sm text-gray-500">
-                    {activeSubtitles.length}개의 자막
-                    {subtitleMode === 'delayed' && isBuffering && ' (버퍼링 중)'}
+                    {subtitles.length}개의 자막
                   </p>
                 </div>
                 <SubtitleTimeline
                   subtitles={timelineSubtitles}
                   currentTimeMs={currentTimeMs}
-                  currentTranscript={activeTranscript}
+                  currentTranscript={currentTranscript}
                   speakerNames={speakerNames}
                   onSeek={handleSeek}
                   onSpeakerNameUpdate={handleSpeakerNameUpdate}
@@ -445,21 +429,30 @@ export default function Home() {
         {!videoUrl && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-2">실시간 자막</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">📺</span>
+                <h3 className="font-semibold text-lg">경기도의회 생중계</h3>
+              </div>
               <p className="text-gray-600 text-sm">
-                KMS 영상의 오디오를 실시간으로 분석하여 자막을 생성합니다.
+                현재 생중계 중인 위원회를 선택하면 실시간 자막을 바로 볼 수 있습니다.
               </p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-2">자막 저장</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🎯</span>
+                <h3 className="font-semibold text-lg">AI 음성 인식</h3>
+              </div>
               <p className="text-gray-600 text-sm">
-                생성된 자막은 자동으로 저장되어 다음에 다시 확인할 수 있습니다.
+                RTZR AI가 영상의 음성을 실시간으로 분석하여 자막을 생성합니다.
               </p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-2">검색 기능</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">💾</span>
+                <h3 className="font-semibold text-lg">자동 저장</h3>
+              </div>
               <p className="text-gray-600 text-sm">
-                저장된 자막을 검색하여 원하는 내용을 빠르게 찾을 수 있습니다.
+                생성된 자막은 자동으로 저장되어 히스토리에서 다시 확인할 수 있습니다.
               </p>
             </div>
           </div>

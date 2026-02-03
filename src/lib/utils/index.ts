@@ -33,3 +33,18 @@ export function extractMidx(kmsUrl: string): number | null {
   const match = kmsUrl.match(/midx=(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }
+
+/**
+ * 안전한 UUID v4 생성 (crypto.randomUUID 미지원 환경 대응)
+ */
+export function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback: UUID v4 형식 생성 (xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}

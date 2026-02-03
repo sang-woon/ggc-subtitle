@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useRtzrStream } from '@/hooks/useRtzrStream';
 import { AudioCapture } from '@/lib/audio/capture';
+import { generateUUID } from '@/lib/utils';
 
 interface TranscriptEntry {
   id: string;
@@ -23,7 +24,7 @@ export default function TestRtzrPage() {
       setTranscripts((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           text: text.trim(),
           isFinal: true,
           timestamp: new Date(),
