@@ -27,7 +27,7 @@ export class AudioCapture {
   constructor(options: AudioCaptureOptions = {}) {
     this.options = {
       sampleRate: options.sampleRate ?? 16000,
-      bufferSize: options.bufferSize ?? 4096,
+      bufferSize: options.bufferSize ?? 8192, // 8192로 증가 (CPU 부하 감소)
       onAudioData: options.onAudioData ?? (() => {}),
     };
   }

@@ -121,7 +121,14 @@ export function VideoPlayer({
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: false, // VOD에서는 안정성 우선
+          maxBufferLength: 30, // 30초 버퍼 (기본 30)
+          maxMaxBufferLength: 60, // 최대 60초까지 버퍼링
+          maxBufferSize: 60 * 1000 * 1000, // 60MB 버퍼
+          maxBufferHole: 0.5, // 버퍼 홀 허용 범위
+          highBufferWatchdogPeriod: 2, // 버퍼 체크 간격
+          startLevel: -1, // 자동 품질 선택
+          abrEwmaDefaultEstimate: 500000, // 초기 대역폭 추정 (500kbps)
         });
 
         hls.loadSource(src);
