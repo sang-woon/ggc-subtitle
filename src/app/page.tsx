@@ -7,7 +7,9 @@ import { SubtitleOverlay } from '@/components/subtitle/SubtitleOverlay';
 import { SubtitleTimeline, TimelineSubtitle } from '@/components/subtitle/SubtitleTimeline';
 import { UrlInput } from '@/components/ui/UrlInput';
 import { LiveChannelList } from '@/components/live/LiveChannelList';
+import { BatchTranscribePanel, isMp4Video } from '@/components/batch/BatchTranscribePanel';
 import { useSubtitleSession } from '@/hooks/useSubtitleSession';
+import { BatchSubtitle } from '@/hooks/useBatchTranscribe';
 import { cn } from '@/lib/utils';
 
 // 입력 방법 타입
@@ -29,6 +31,8 @@ export default function Home() {
     count: number;
     midx: number | null;
   }>({ checked: false, hasSubtitles: false, count: 0, midx: null });
+  const [batchSubtitles, setBatchSubtitles] = useState<BatchSubtitle[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const {
@@ -110,6 +114,13 @@ export default function Home() {
       setVideoUrl(url);
       setMidx(extractedMidx);
 
+      // 2.5. MP4 여부 확인하여 배치 모드 설정
+      const isMp4 = isMp4Video(url);
+      setIsBatchMode(isMp4);
+      if (isMp4) {
+        setBatchSubtitles([]);
+      }
+
       // 3. KMS 페이지에서 비디오 URL 추출
       const response = await fetch(`/api/kms/video-url?url=${encodeURIComponent(url)}`);
       const data = await response.json();
@@ -132,6 +143,12 @@ export default function Home() {
   const handleVideoReady = useCallback(async (video: HTMLVideoElement) => {
     videoRef.current = video;
 
+    // MP4 배치 모드면 실시간 STT 시작하지 않음
+    if (isBatchMode) {
+      console.log('[VideoReady] Batch mode - skipping realtime STT');
+      return;
+    }
+
     // 기존 자막이 있으면 로드
     if (preCheckedSubtitles.checked) {
       console.log(`[VideoReady] Using pre-checked info: hasSubtitles=${preCheckedSubtitles.hasSubtitles}, count=${preCheckedSubtitles.count}, midx=${preCheckedSubtitles.midx}`);
@@ -148,7 +165,20 @@ export default function Home() {
     const effectiveVideoUrl = videoUrl || undefined;
     console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
     await startSession(video, effectiveMidx, effectiveVideoUrl);
-  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles]);
+  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles, isBatchMode]);
+
+  // 배치 전사 완료 핸들러
+  const handleBatchComplete = useCallback((batchResults: BatchSubtitle[]) => {
+    console.log('[Batch] Transcription completed, subtitles:', batchResults.length);
+    setBatchSubtitles(batchResults);
+  }, []);
+
+  // 배치 자막 클릭 시 해당 시간으로 이동
+  const handleBatchSubtitleClick = useCallback((subtitle: BatchSubtitle) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = subtitle.startTime / 1000;
+    }
+  }, []);
 
   // 시간 업데이트 핸들러
   const handleTimeUpdate = useCallback((timeMs: number) => {
@@ -196,6 +226,14 @@ export default function Home() {
       return currentTranscript || '';
     }
 
+    // 배치 모드: 배치 자막에서 검색
+    if (isBatchMode && batchSubtitles.length > 0) {
+      const current = batchSubtitles.find(
+        (s) => currentTimeMs >= s.startTime && currentTimeMs < s.endTime
+      );
+      if (current) return current.text;
+    }
+
     // 재생 모드: 시간 기반 자막 검색
     const current = subtitles.find(
       (s) => currentTimeMs >= s.startTimeMs && currentTimeMs < s.endTimeMs
@@ -204,17 +242,26 @@ export default function Home() {
 
     // 없으면 마지막으로 표시된 자막 유지
     return lastDisplayedSubtitle;
-  }, [subtitles, currentTimeMs, currentTranscript, lastDisplayedSubtitle, isActive]);
+  }, [subtitles, currentTimeMs, currentTranscript, lastDisplayedSubtitle, isActive, isBatchMode, batchSubtitles]);
 
-  // 타임라인용 자막 변환
-  const timelineSubtitles: TimelineSubtitle[] = subtitles.map((s) => ({
-    id: s.id,
-    startTimeMs: s.startTimeMs,
-    endTimeMs: s.endTimeMs,
-    text: s.text,
-    speaker: s.speaker,
-    isEdited: false,
-  }));
+  // 타임라인용 자막 변환 (배치 모드면 배치 자막 사용)
+  const timelineSubtitles: TimelineSubtitle[] = isBatchMode && batchSubtitles.length > 0
+    ? batchSubtitles.map((s) => ({
+        id: s.id,
+        startTimeMs: s.startTime,
+        endTimeMs: s.endTime,
+        text: s.text,
+        speaker: s.speaker,
+        isEdited: false,
+      }))
+    : subtitles.map((s) => ({
+        id: s.id,
+        startTimeMs: s.startTimeMs,
+        endTimeMs: s.endTimeMs,
+        text: s.text,
+        speaker: s.speaker,
+        isEdited: false,
+      }));
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -246,6 +293,12 @@ export default function Home() {
               className="text-blue-600 hover:text-blue-700 text-sm"
             >
               히스토리
+            </Link>
+            <Link
+              href="/feedback"
+              className="text-blue-600 hover:text-blue-700 text-sm"
+            >
+              개선 요청
             </Link>
           </div>
         </div>
@@ -400,6 +453,16 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              {/* MP4 배치 전사 패널 */}
+              {isBatchMode && videoUrl && (
+                <BatchTranscribePanel
+                  videoUrl={videoUrl}
+                  onComplete={handleBatchComplete}
+                  onSubtitleClick={handleBatchSubtitleClick}
+                  className="mt-4"
+                />
+              )}
             </div>
 
             {/* 자막 타임라인 */}
@@ -471,6 +534,12 @@ export default function Home() {
             className="text-blue-600 hover:text-blue-700 text-sm"
           >
             세션 히스토리 →
+          </Link>
+          <Link
+            href="/feedback"
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            개선 요청 →
           </Link>
           <Link
             href="/test-rtzr"

@@ -58,6 +58,21 @@ export const subtitleEdits = pgTable('subtitle_edits', {
   index('idx_edits_created').on(table.createdAt),
 ]);
 
+// 피드백 게시판
+export const feedbacks = pgTable('feedbacks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  authorName: text('author_name').default('익명'),
+  imageUrls: text('image_urls').array(),
+  status: text('status').default('pending'), // pending, reviewed, resolved
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_feedbacks_created').on(table.createdAt),
+  index('idx_feedbacks_status').on(table.status),
+]);
+
 // 타입 추론용
 export type VideoSession = typeof videoSessions.$inferSelect;
 export type NewVideoSession = typeof videoSessions.$inferInsert;
@@ -65,3 +80,5 @@ export type SubtitleRecord = typeof subtitles.$inferSelect;
 export type NewSubtitle = typeof subtitles.$inferInsert;
 export type SubtitleEdit = typeof subtitleEdits.$inferSelect;
 export type NewSubtitleEdit = typeof subtitleEdits.$inferInsert;
+export type Feedback = typeof feedbacks.$inferSelect;
+export type NewFeedback = typeof feedbacks.$inferInsert;

@@ -228,6 +228,97 @@ flowchart LR
 
 ---
 
+---
+
+## P4: MP4 배치 전사 기능
+
+### [ ] P4-T4.1: MP4 배치 전사 API
+- **담당**: backend-specialist
+- **의존**: P0-T0.3 (RTZR API)
+- **작업**: MP4 URL에서 오디오 추출 후 RTZR 배치 전사 API 호출
+- **스펙**:
+  - MP4 URL 수신 → 서버에서 다운로드/스트리밍
+  - RTZR `/v1/transcribe` API로 파일 전송
+  - 폴링으로 결과 대기 (5초 간격)
+  - 타임스탬프 포함 자막 반환 (utterances)
+- **AC**: 1시간 영상 30분 이내 처리, 타임스탬프 오차 ±500ms
+- **산출물**: `src/app/api/rtzr/batch/route.ts`
+- **Worktree**: `worktree/phase-4-batch`
+- **TDD**: RED → GREEN → REFACTOR
+
+### [ ] P4-T4.2: 배치 전사 UI
+- **담당**: frontend-specialist
+- **의존**: P4-T4.1
+- **작업**: MP4 감지 시 배치 전사 모드 UI 표시
+- **스펙**:
+  - URL 형식으로 MP4/HLS 자동 감지
+  - MP4일 때 "전사 시작" 버튼 표시
+  - 전사 진행률/상태 표시 (대기중, 처리중, 완료)
+  - 완료 시 자막 자동 표시 및 DB 저장
+- **AC**: 상태 전환 즉시 반영, 에러 시 재시도 옵션
+- **산출물**: `src/components/batch/BatchTranscribePanel.tsx`, `src/hooks/useBatchTranscribe.ts`
+- **Worktree**: `worktree/phase-4-batch`
+- **TDD**: RED → GREEN → REFACTOR
+
+### [ ] P4-T4.3: 긴 영상 분할 처리
+- **담당**: backend-specialist
+- **의존**: P4-T4.1
+- **작업**: 4시간 초과 영상을 1시간 단위로 분할 후 병렬 전사
+- **스펙**:
+  - 영상 길이 확인 (ffprobe)
+  - 4시간 초과 시 1시간 청크로 분할 (ffmpeg)
+  - 최대 5개 병렬 전사 요청
+  - 결과 병합 시 타임스탬프 보정 (청크 시작 시간 + 상대 시간)
+- **AC**: 5시간 영상 2시간 이내 처리, 청크 경계 자막 누락 없음
+- **산출물**: `src/lib/video/split.ts`, `src/app/api/rtzr/batch/route.ts` 수정
+- **Worktree**: `worktree/phase-4-batch`
+- **TDD**: RED → GREEN → REFACTOR
+- **참고**: Vercel Serverless 함수 제한(10초~60초) 고려 → 백그라운드 작업 필요
+
+### [ ] P4-T4.4: 배치 전사 UX 개선
+- **담당**: frontend-specialist
+- **의존**: P4-T4.2, P4-T4.3
+- **작업**: 예상 시간 표시, 백그라운드 처리, 캐싱
+- **스펙**:
+  - 영상 길이 기반 예상 처리 시간 표시
+  - 전사 작업 백그라운드 실행 (페이지 이탈해도 지속)
+  - 완료 시 알림 (브라우저 Notification API)
+  - 동일 URL 재요청 시 캐시된 결과 반환
+- **AC**: 예상 시간 오차 ±30%, 브라우저 알림 동작
+- **산출물**: `src/components/batch/BatchTranscribePanel.tsx` 수정, `src/app/api/rtzr/batch/cache/route.ts`
+- **Worktree**: `worktree/phase-4-batch`
+- **TDD**: RED → GREEN → REFACTOR
+
+---
+
+## 의존성 (P4 추가)
+
+```mermaid
+flowchart LR
+  subgraph P4[Phase 4: 배치 전사]
+    T4.1[T4.1: 배치 API]
+    T4.2[T4.2: 배치 UI]
+    T4.3[T4.3: 분할 처리]
+    T4.4[T4.4: UX 개선]
+    T4.1 --> T4.2
+    T4.1 --> T4.3
+    T4.2 --> T4.4
+    T4.3 --> T4.4
+  end
+
+  P3 --> P4
+```
+
+## 병렬 실행 가능 그룹 (P4)
+
+| Phase | 병렬 그룹 | 태스크 |
+|-------|----------|--------|
+| P4 | Group 1 | T4.1 (단독) |
+| P4 | Group 2 | T4.2, T4.3 (T4.1 이후 병렬) |
+| P4 | Group 3 | T4.4 (T4.2, T4.3 완료 후) |
+
+---
+
 ## 진행 상황 요약
 
 | Phase | 완료 | 미완료 | 진행률 |
@@ -236,4 +327,5 @@ flowchart LR
 | P1 | 5 | 0 | 100% |
 | P2 | 3 | 0 | 100% |
 | P3 | 3 | 0 | 100% |
-| **총계** | **15** | **0** | **100%** |
+| P4 | 0 | 4 | 0% |
+| **총계** | **15** | **4** | **79%** |
