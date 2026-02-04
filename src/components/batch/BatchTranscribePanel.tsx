@@ -49,6 +49,8 @@ function getStatusMessage(status: BatchStatus, progress: number): string {
       return '영상 다운로드 중...';
     case 'transcribing':
       return `음성 인식 중... (${progress}%)`;
+    case 'polling':
+      return `서버 처리 중... (${progress}%)`;
     case 'completed':
       return '전사 완료!';
     case 'failed':
@@ -69,6 +71,8 @@ function getStatusStyle(status: BatchStatus): { icon: string; color: string } {
       return { icon: '⬇️', color: 'text-blue-400' };
     case 'transcribing':
       return { icon: '🎙️', color: 'text-yellow-400' };
+    case 'polling':
+      return { icon: '⏳', color: 'text-orange-400' };
     case 'completed':
       return { icon: '✅', color: 'text-green-400' };
     case 'failed':
@@ -104,11 +108,11 @@ export function BatchTranscribePanel({
     progress,
     subtitles,
     error,
+    estimatedTime,
     startTranscription,
     reset,
   } = useBatchTranscribe();
 
-  const [estimatedDuration] = useState<number | undefined>(undefined);
   const { icon, color } = getStatusStyle(status);
 
   const handleStart = async () => {
@@ -141,7 +145,7 @@ export function BatchTranscribePanel({
       </div>
 
       {/* 진행률 바 */}
-      {(status === 'downloading' || status === 'transcribing') && (
+      {(status === 'downloading' || status === 'transcribing' || status === 'polling') && (
         <div className="mb-3">
           <div className="w-full bg-slate-700 rounded-full h-2">
             <div
@@ -150,7 +154,7 @@ export function BatchTranscribePanel({
             />
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            예상 시간: {estimateProcessingTime(estimatedDuration)}
+            {estimatedTime ? `예상 시간: ${estimatedTime}` : '처리 중...'}
           </p>
         </div>
       )}
@@ -173,7 +177,7 @@ export function BatchTranscribePanel({
           </button>
         )}
 
-        {(status === 'downloading' || status === 'transcribing') && (
+        {(status === 'downloading' || status === 'transcribing' || status === 'polling') && (
           <button
             onClick={reset}
             className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
