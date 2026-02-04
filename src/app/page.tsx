@@ -213,6 +213,11 @@ export default function Home() {
 
     // 생중계 모드: Leader Election 적용
     if (isLiveStream && liveChannelCode) {
+      // 이미 연결 중이거나 연결됨 - 중복 연결 방지
+      if (isLiveConnecting || isLiveConnected) {
+        console.log('[VideoReady] Already connected or connecting to live session, skipping');
+        return;
+      }
       console.log('[VideoReady] Live stream mode - connecting to live session');
       await connectLiveSession();
       // 리더/팔로워 역할은 useLiveSession 내부에서 결정됨
@@ -236,7 +241,7 @@ export default function Home() {
     const effectiveVideoUrl = videoUrl || undefined;
     console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
     await startSession(video, effectiveMidx, effectiveVideoUrl);
-  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles, isBatchMode, isLiveStream, liveChannelCode, connectLiveSession]);
+  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles, isBatchMode, isLiveStream, liveChannelCode, isLiveConnecting, isLiveConnected, connectLiveSession]);
 
   // 배치 전사 완료 핸들러
   const handleBatchComplete = useCallback((batchResults: BatchSubtitle[]) => {

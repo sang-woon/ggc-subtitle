@@ -33,6 +33,17 @@ interface UseSubtitleSessionReturn {
 }
 
 
+// 문자열 해시코드 생성 (생중계 URL → synthetic midx 변환용)
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash) % 1000000 + 900000; // 900000~1900000 범위의 음수 midx로 사용
+}
+
 // 중복 단어/음절 제거 함수
 function removeDuplicates(text: string): string {
   let result = text;
@@ -326,8 +337,8 @@ export function useSubtitleSession({
     sendAudio,
     sendEOS,
   } = useRtzrStream({
-    realtime: true, // 실시간 SSE 모드 활성화
-    sendInterval: 500, // 500ms마다 오디오 전송 (100ms는 중복 발생)
+    realtime: false, // HTTP 배치 모드 (Vercel 서버리스에서 SSE 세션 유지 불가)
+    sendInterval: 2000, // 2초마다 배치 전송 (더 자주 전송하여 실시간성 개선)
     onTranscript: handleTranscript,
     onError: handleError,
   });
@@ -388,19 +399,21 @@ export function useSubtitleSession({
 
   // 실시간 STT 시작 헬퍼 함수 (내부 사용)
   const doStartRealtimeSTT = async (videoElement: HTMLVideoElement) => {
-    // DB에 세션 생성/조회 (midx가 있는 경우, 아직 안 했으면)
-    if (midx !== null && !sessionIdRef.current) {
-      const sessionResult = await getOrCreateSession(videoUrl, midx, title);
+    // DB에 세션 생성/조회
+    if (!sessionIdRef.current) {
+      // 생중계의 경우 URL에서 synthetic midx 생성 (음수 사용)
+      const effectiveMidx = midx !== null ? midx : -Math.abs(hashCode(videoUrl));
+      const sessionResult = await getOrCreateSession(videoUrl, effectiveMidx, title || '생중계');
 
       if (sessionResult) {
         sessionIdRef.current = sessionResult.session.id;
         setDbSessionId(sessionResult.session.id);
+        console.log('[T1.4] Session created/found:', sessionResult.session.id);
       } else {
-        console.warn('[T1.4] Failed to create DB session, using local session ID');
+        console.warn('[T1.4] Failed to create DB session, subtitles will not be saved');
+        // 세션 생성 실패 시에도 로컬에서는 동작하도록 UUID 사용
         sessionIdRef.current = generateUUID();
       }
-    } else if (!sessionIdRef.current) {
-      sessionIdRef.current = generateUUID();
     }
 
     // 비디오 시작 시점 저장 (RTZR 타임스탬프 오프셋용)
@@ -427,11 +440,18 @@ export function useSubtitleSession({
       },
     });
 
-    await audioCapture.startFromVideo(videoElement);
-    audioCaptureRef.current = audioCapture;
-
-    setIsActive(true);
-    console.log('[T1.4] Realtime STT session started');
+    try {
+      await audioCapture.startFromVideo(videoElement);
+      audioCaptureRef.current = audioCapture;
+      setIsActive(true);
+      console.log('[T1.4] Realtime STT session started');
+    } catch (captureError) {
+      // 오디오 캡처 실패 (CORS 등) - 비디오는 계속 재생되도록 함
+      console.error('[T1.4] Audio capture failed, video will continue playing:', captureError);
+      setError('오디오 캡처 실패 - CORS 정책으로 인해 자막 생성 불가');
+      // RTZR 연결 해제
+      disconnect();
+    }
   };
 
   // @TASK T1.4.6 - 세션 시작 (기존 자막이 있으면 STT 건너뛰기)

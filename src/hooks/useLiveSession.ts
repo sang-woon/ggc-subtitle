@@ -294,11 +294,29 @@ export function useLiveSession(options: UseLiveSessionOptions): UseLiveSessionRe
   }, [role, channelCode, updateRole]);
 
   // 컴포넌트 언마운트 시 정리
+  // NOTE: 빈 의존성 배열 사용 - disconnect 함수 변경 시마다 cleanup이 실행되는 것을 방지
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
-      disconnect();
+      // 언마운트 시에만 정리 작업 수행 (ref 사용으로 최신 상태 접근)
+      isCleaningUpRef.current = true;
+
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+
+      if (leaderCheckIntervalRef.current) {
+        clearInterval(leaderCheckIntervalRef.current);
+        leaderCheckIntervalRef.current = null;
+      }
+
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
     };
-  }, [disconnect]);
+  }, []);
 
   return {
     role,
