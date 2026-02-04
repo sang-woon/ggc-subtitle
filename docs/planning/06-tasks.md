@@ -230,9 +230,9 @@ flowchart LR
 
 ---
 
-## P4: MP4 배치 전사 기능
+## P4: MP4 배치 전사 기능 (완료)
 
-### [ ] P4-T4.1: MP4 배치 전사 API
+### [x] P4-T4.1: MP4 배치 전사 API
 - **담당**: backend-specialist
 - **의존**: P0-T0.3 (RTZR API)
 - **작업**: MP4 URL에서 오디오 추출 후 RTZR 배치 전사 API 호출
@@ -246,7 +246,7 @@ flowchart LR
 - **Worktree**: `worktree/phase-4-batch`
 - **TDD**: RED → GREEN → REFACTOR
 
-### [ ] P4-T4.2: 배치 전사 UI
+### [x] P4-T4.2: 배치 전사 UI
 - **담당**: frontend-specialist
 - **의존**: P4-T4.1
 - **작업**: MP4 감지 시 배치 전사 모드 UI 표시
@@ -260,7 +260,7 @@ flowchart LR
 - **Worktree**: `worktree/phase-4-batch`
 - **TDD**: RED → GREEN → REFACTOR
 
-### [ ] P4-T4.3: 긴 영상 분할 처리
+### [x] P4-T4.3: 긴 영상 분할 처리
 - **담당**: backend-specialist
 - **의존**: P4-T4.1
 - **작업**: 4시간 초과 영상을 1시간 단위로 분할 후 병렬 전사
@@ -275,7 +275,8 @@ flowchart LR
 - **TDD**: RED → GREEN → REFACTOR
 - **참고**: Vercel Serverless 함수 제한(10초~60초) 고려 → 백그라운드 작업 필요
 
-### [ ] P4-T4.4: 배치 전사 UX 개선
+### [x] P4-T4.4: 배치 전사 UX 개선
+- **완료일**: 2026-02-04
 - **담당**: frontend-specialist
 - **의존**: P4-T4.2, P4-T4.3
 - **작업**: 예상 시간 표시, 백그라운드 처리, 캐싱
@@ -327,5 +328,5 @@ flowchart LR
 | P1 | 5 | 0 | 100% |
 | P2 | 3 | 0 | 100% |
 | P3 | 3 | 0 | 100% |
-| P4 | 0 | 4 | 0% |
-| **총계** | **15** | **4** | **79%** |
+| P4 | 4 | 0 | 100% |
+| **총계** | **19** | **0** | **100%** |
