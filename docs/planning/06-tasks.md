@@ -320,6 +320,82 @@ flowchart LR
 
 ---
 
+---
+
+## P5: 공유 자막 스트리밍 (완료)
+
+### [x] P5-T5.1: 라이브 세션 DB 스키마 추가
+- **완료일**: 2026-02-04
+- **담당**: backend-specialist
+- **작업**: Leader Election 패턴용 live_sessions 테이블 추가
+- **스펙**:
+  - channel_code: 채널 고유 식별자
+  - leader_id: 리더 클라이언트 ID
+  - is_active: 활성 상태
+  - last_heartbeat: 마지막 heartbeat 시간
+- **산출물**: `src/db/schema.ts` 수정, `drizzle/0002_add_live_sessions.sql`
+- **Worktree**: ❌ (main 직접)
+
+### [x] P5-T5.2: 라이브 세션 API 구현
+- **완료일**: 2026-02-04
+- **담당**: backend-specialist
+- **의존**: P5-T5.1
+- **작업**: Leader 등록/Heartbeat/조회 API
+- **스펙**:
+  - GET: 현재 리더 조회 + stale 리더 정리
+  - POST: 리더로 등록 (경쟁 처리)
+  - PATCH: Heartbeat 업데이트
+  - DELETE: 세션 종료
+- **산출물**: `src/app/api/live/session/route.ts`
+- **Worktree**: ❌ (main 직접)
+
+### [x] P5-T5.3: useLiveSession 훅 구현
+- **완료일**: 2026-02-04
+- **담당**: frontend-specialist
+- **의존**: P5-T5.2
+- **작업**: Leader Election + Supabase Realtime 통합 훅
+- **스펙**:
+  - 리더 역할: RTZR 전사 + 자막 브로드캐스트
+  - 팔로워 역할: Supabase Realtime 구독
+  - Heartbeat 유지 (5초 간격)
+  - 리더 승계 (stale leader detection)
+- **산출물**: `src/hooks/useLiveSession.ts`
+- **Worktree**: ❌ (main 직접)
+
+### [x] P5-T5.4: 메인 페이지 통합
+- **완료일**: 2026-02-04
+- **담당**: frontend-specialist
+- **의존**: P5-T5.3
+- **작업**: 생중계 모드에 Leader/Follower 패턴 적용
+- **스펙**:
+  - 생중계 선택 시 useLiveSession 연결
+  - 리더: 기존 RTZR 스트리밍 + 브로드캐스트
+  - 팔로워: Realtime 자막 수신만
+  - 역할 배지 UI (리더/팔로워)
+- **산출물**: `src/app/page.tsx` 수정
+- **Worktree**: ❌ (main 직접)
+
+---
+
+## 의존성 (P5 추가)
+
+```mermaid
+flowchart LR
+  subgraph P5[Phase 5: 공유 자막]
+    T5.1[T5.1: DB 스키마]
+    T5.2[T5.2: API]
+    T5.3[T5.3: 훅]
+    T5.4[T5.4: 통합]
+    T5.1 --> T5.2
+    T5.2 --> T5.3
+    T5.3 --> T5.4
+  end
+
+  P4 --> P5
+```
+
+---
+
 ## 진행 상황 요약
 
 | Phase | 완료 | 미완료 | 진행률 |
@@ -329,4 +405,5 @@ flowchart LR
 | P2 | 3 | 0 | 100% |
 | P3 | 3 | 0 | 100% |
 | P4 | 4 | 0 | 100% |
-| **총계** | **19** | **0** | **100%** |
+| P5 | 4 | 0 | 100% |
+| **총계** | **23** | **0** | **100%** |

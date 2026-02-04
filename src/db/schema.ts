@@ -58,6 +58,20 @@ export const subtitleEdits = pgTable('subtitle_edits', {
   index('idx_edits_created').on(table.createdAt),
 ]);
 
+// 라이브 스트리밍 세션 (Leader Election 패턴)
+export const liveSessions = pgTable('live_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  channelCode: text('channel_code').notNull().unique(), // midx 기반 채널 식별자
+  leaderId: text('leader_id').notNull(), // 리더 클라이언트 ID
+  isActive: boolean('is_active').default(true),
+  lastHeartbeat: timestamp('last_heartbeat', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_live_sessions_channel').on(table.channelCode),
+  index('idx_live_sessions_active').on(table.isActive),
+]);
+
 // 피드백 게시판
 export const feedbacks = pgTable('feedbacks', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -82,3 +96,5 @@ export type SubtitleEdit = typeof subtitleEdits.$inferSelect;
 export type NewSubtitleEdit = typeof subtitleEdits.$inferInsert;
 export type Feedback = typeof feedbacks.$inferSelect;
 export type NewFeedback = typeof feedbacks.$inferInsert;
+export type LiveSession = typeof liveSessions.$inferSelect;
+export type NewLiveSession = typeof liveSessions.$inferInsert;

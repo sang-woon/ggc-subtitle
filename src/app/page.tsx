@@ -9,6 +9,7 @@ import { UrlInput } from '@/components/ui/UrlInput';
 import { LiveChannelList } from '@/components/live/LiveChannelList';
 import { BatchTranscribePanel } from '@/components/batch/BatchTranscribePanel';
 import { useSubtitleSession } from '@/hooks/useSubtitleSession';
+import { useLiveSession, LiveSessionRole } from '@/hooks/useLiveSession';
 import { BatchSubtitle } from '@/hooks/useBatchTranscribe';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,9 @@ export default function Home() {
   const [batchSubtitles, setBatchSubtitles] = useState<BatchSubtitle[]>([]);
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [actualVideoUrl, setActualVideoUrl] = useState<string | null>(null); // 실제 MP4/HLS URL
+  const [isLiveStream, setIsLiveStream] = useState(false); // 생중계 스트림 여부
+  const [liveChannelCode, setLiveChannelCode] = useState<string | null>(null); // 생중계 채널 코드
+  const [followerSubtitles, setFollowerSubtitles] = useState<TimelineSubtitle[]>([]); // 팔로워가 수신한 자막
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const {
@@ -56,19 +60,66 @@ export default function Home() {
     title: `KMS 영상 ${midx || ''}`,
   });
 
+  // 라이브 세션 훅 (Leader Election + Supabase Realtime)
+  const {
+    role: liveRole,
+    isConnected: isLiveConnected,
+    isConnecting: isLiveConnecting,
+    clientId,
+    broadcastSubtitle,
+    connect: connectLiveSession,
+    disconnect: disconnectLiveSession,
+  } = useLiveSession({
+    channelCode: liveChannelCode || 'default',
+    onSubtitle: (subtitle) => {
+      // 팔로워가 자막 수신 시
+      if (liveRole === 'follower') {
+        setFollowerSubtitles((prev) => {
+          // 중복 체크
+          const exists = prev.some((s) => s.id === subtitle.id);
+          if (exists) return prev;
+
+          return [
+            ...prev,
+            {
+              id: subtitle.id,
+              startTimeMs: subtitle.startTime,
+              endTimeMs: subtitle.endTime,
+              text: subtitle.text,
+              speaker: subtitle.speaker,
+              isEdited: false,
+            },
+          ];
+        });
+      }
+    },
+    onRoleChange: (newRole) => {
+      console.log(`[LiveSession] Role changed to: ${newRole}`);
+    },
+    onError: (error) => {
+      console.error('[LiveSession] Error:', error);
+    },
+  });
+
   // 생중계 채널 선택 핸들러
-  const handleLiveChannelSelect = useCallback(async (streamUrl: string) => {
+  const handleLiveChannelSelect = useCallback(async (streamUrl: string, channelName?: string) => {
     setIsLoading(true);
     setUrlError(null);
     setPreCheckedSubtitles({ checked: false, hasSubtitles: false, count: 0, midx: null });
     setIsBatchMode(false); // 생중계는 배치 모드 아님
     setActualVideoUrl(null);
+    setIsLiveStream(true); // 생중계 모드
+    setFollowerSubtitles([]); // 이전 팔로워 자막 초기화
 
     try {
       // 생중계는 midx 없이 스트림 URL 직접 사용
       setVideoUrl(streamUrl);
       setMidx(null);
       setHlsUrl(streamUrl); // HLS URL 직접 사용 (CORS 필요 없음)
+
+      // 채널 코드 생성 (URL에서 고유 식별자 추출)
+      const channelCode = `live-${streamUrl.split('/').pop()?.split('.')[0] || Date.now()}`;
+      setLiveChannelCode(channelCode);
     } catch (err) {
       setUrlError(err instanceof Error ? err.message : '스트림 연결 실패');
     } finally {
@@ -81,6 +132,9 @@ export default function Home() {
     setIsLoading(true);
     setUrlError(null);
     setPreCheckedSubtitles({ checked: false, hasSubtitles: false, count: 0, midx: null });
+    setIsLiveStream(false); // URL 직접 입력은 생중계가 아님
+    setLiveChannelCode(null);
+    setFollowerSubtitles([]);
 
     try {
       // 1. 먼저 기존 자막이 있는지 확인 (비디오 로드 전)
@@ -157,6 +211,15 @@ export default function Home() {
       return;
     }
 
+    // 생중계 모드: Leader Election 적용
+    if (isLiveStream && liveChannelCode) {
+      console.log('[VideoReady] Live stream mode - connecting to live session');
+      await connectLiveSession();
+      // 리더/팔로워 역할은 useLiveSession 내부에서 결정됨
+      // 리더인 경우에만 startSession 호출 (아래에서 useEffect로 처리)
+      return;
+    }
+
     // 기존 자막이 있으면 로드
     if (preCheckedSubtitles.checked) {
       console.log(`[VideoReady] Using pre-checked info: hasSubtitles=${preCheckedSubtitles.hasSubtitles}, count=${preCheckedSubtitles.count}, midx=${preCheckedSubtitles.midx}`);
@@ -173,7 +236,7 @@ export default function Home() {
     const effectiveVideoUrl = videoUrl || undefined;
     console.log(`[VideoReady] Starting realtime session with midx=${effectiveMidx}`);
     await startSession(video, effectiveMidx, effectiveVideoUrl);
-  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles, isBatchMode]);
+  }, [preCheckedSubtitles, midx, videoUrl, startSession, checkExistingSubtitles, isBatchMode, isLiveStream, liveChannelCode, connectLiveSession]);
 
   // 배치 전사 완료 핸들러
   const handleBatchComplete = useCallback((batchResults: BatchSubtitle[]) => {
@@ -227,11 +290,46 @@ export default function Home() {
     }
   }, [subtitles]);
 
+  // 생중계 리더 역할: RTZR 세션 시작
+  useEffect(() => {
+    if (isLiveStream && liveRole === 'leader' && isLiveConnected && videoRef.current && !isActive) {
+      console.log('[LiveStream] Leader role confirmed - starting RTZR session');
+      startRealtimeSession(videoRef.current);
+    }
+  }, [isLiveStream, liveRole, isLiveConnected, isActive, startRealtimeSession]);
+
+  // 리더: 새 자막이 생성되면 브로드캐스트
+  useEffect(() => {
+    if (isLiveStream && liveRole === 'leader' && subtitles.length > 0) {
+      const latestSubtitle = subtitles[subtitles.length - 1];
+      broadcastSubtitle({
+        id: latestSubtitle.id,
+        text: latestSubtitle.text,
+        startTime: latestSubtitle.startTimeMs,
+        endTime: latestSubtitle.endTimeMs,
+        isFinal: true,
+        speaker: latestSubtitle.speaker,
+        timestamp: Date.now(),
+      });
+    }
+  }, [isLiveStream, liveRole, subtitles, broadcastSubtitle]);
+
   // 현재 표시할 자막 찾기
   const getCurrentSubtitle = useCallback((): string => {
-    // 실시간 모드: currentTranscript만 표시 (SubtitleOverlay가 확정된 자막 관리)
+    // 실시간 모드 (리더): currentTranscript만 표시 (SubtitleOverlay가 확정된 자막 관리)
     if (isActive) {
       return currentTranscript || '';
+    }
+
+    // 팔로워 모드: 팔로워 자막에서 검색 (최신 자막 표시)
+    if (isLiveStream && liveRole === 'follower' && followerSubtitles.length > 0) {
+      // 현재 시간에 맞는 자막 찾기 또는 가장 최신 자막
+      const current = followerSubtitles.find(
+        (s) => currentTimeMs >= s.startTimeMs && currentTimeMs < s.endTimeMs
+      );
+      if (current) return current.text;
+      // 없으면 가장 최신 자막 반환
+      return followerSubtitles[followerSubtitles.length - 1]?.text || '';
     }
 
     // 배치 모드: 배치 자막에서 검색
@@ -250,26 +348,35 @@ export default function Home() {
 
     // 없으면 마지막으로 표시된 자막 유지
     return lastDisplayedSubtitle;
-  }, [subtitles, currentTimeMs, currentTranscript, lastDisplayedSubtitle, isActive, isBatchMode, batchSubtitles]);
+  }, [subtitles, currentTimeMs, currentTranscript, lastDisplayedSubtitle, isActive, isBatchMode, batchSubtitles, isLiveStream, liveRole, followerSubtitles]);
 
-  // 타임라인용 자막 변환 (배치 모드면 배치 자막 사용)
-  const timelineSubtitles: TimelineSubtitle[] = isBatchMode && batchSubtitles.length > 0
-    ? batchSubtitles.map((s) => ({
+  // 타임라인용 자막 변환 (배치 모드 / 팔로워 모드 / 일반 모드)
+  const timelineSubtitles: TimelineSubtitle[] = (() => {
+    // 배치 모드: 배치 자막 사용
+    if (isBatchMode && batchSubtitles.length > 0) {
+      return batchSubtitles.map((s) => ({
         id: s.id,
         startTimeMs: s.startTime,
         endTimeMs: s.endTime,
         text: s.text,
         speaker: s.speaker,
         isEdited: false,
-      }))
-    : subtitles.map((s) => ({
-        id: s.id,
-        startTimeMs: s.startTimeMs,
-        endTimeMs: s.endTimeMs,
-        text: s.text,
-        speaker: s.speaker,
-        isEdited: false,
       }));
+    }
+    // 팔로워 모드: 팔로워 자막 사용
+    if (isLiveStream && liveRole === 'follower' && followerSubtitles.length > 0) {
+      return followerSubtitles;
+    }
+    // 일반 모드: 세션 자막 사용
+    return subtitles.map((s) => ({
+      id: s.id,
+      startTimeMs: s.startTimeMs,
+      endTimeMs: s.endTimeMs,
+      text: s.text,
+      speaker: s.speaker,
+      isEdited: false,
+    }));
+  })();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -287,7 +394,11 @@ export default function Home() {
               setIsBatchMode(false);
               setActualVideoUrl(null);
               setBatchSubtitles([]);
+              setIsLiveStream(false);
+              setLiveChannelCode(null);
+              setFollowerSubtitles([]);
               stopSession();
+              disconnectLiveSession();
             }}
           >
             경기도의회 실시간 자막 시스템
@@ -397,8 +508,22 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* 실시간 자막 상태 */}
-                    {isActive && (
+                    {/* 생중계 역할 표시 */}
+                    {isLiveStream && liveRole !== 'idle' && (
+                      <div className={cn(
+                        'flex items-center gap-2 text-sm px-2 py-1 rounded',
+                        liveRole === 'leader' ? 'bg-purple-600/30 text-purple-300' : 'bg-cyan-600/30 text-cyan-300'
+                      )}>
+                        <div className={cn(
+                          'w-2 h-2 rounded-full',
+                          liveRole === 'leader' ? 'bg-purple-400 animate-pulse' : 'bg-cyan-400'
+                        )} />
+                        {liveRole === 'leader' ? '🎙️ 자막 생성 중 (리더)' : '📡 자막 수신 중'}
+                      </div>
+                    )}
+
+                    {/* 실시간 자막 상태 (일반 모드) */}
+                    {!isLiveStream && isActive && (
                       <div className="flex items-center gap-2 text-green-400 text-sm">
                         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                         실시간 자막 활성화
@@ -435,7 +560,11 @@ export default function Home() {
                       setIsBatchMode(false);
                       setActualVideoUrl(null);
                       setBatchSubtitles([]);
+                      setIsLiveStream(false);
+                      setLiveChannelCode(null);
+                      setFollowerSubtitles([]);
                       stopSession();
+                      disconnectLiveSession();
                     }}
                     className="text-gray-400 hover:text-white text-sm"
                   >
