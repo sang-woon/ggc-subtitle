@@ -33,8 +33,10 @@ interface OnairData {
  */
 export async function GET() {
   try {
-    // 오늘 날짜 (YYYY-MM-DD 형식)
-    const today = new Date().toISOString().split('T')[0];
+    // 오늘 날짜 (YYYY-MM-DD 형식) - 한국 표준시 기준
+    const now = new Date();
+    const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const today = koreaTime.toISOString().split('T')[0];
 
     // 경기도의회 API 호출
     const response = await fetch('https://live.ggc.go.kr/getOnairListTodayData.do', {
@@ -57,7 +59,7 @@ export async function GET() {
         for (const item of data) {
           liveStatusMap.set(item.adCode, item.kmsLivestatus);
         }
-        console.log('[Live API] Got status for', data.length, 'channels:',
+        console.log(`[Live API] Date: ${today} (KST), Got status for`, data.length, 'channels:',
           data.map(d => `${d.adCode}=${d.kmsLivestatus}`).join(', '));
       } catch (parseError) {
         console.error('[Live API] Failed to parse response:', parseError);

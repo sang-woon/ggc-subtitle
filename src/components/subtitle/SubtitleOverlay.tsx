@@ -62,17 +62,14 @@ export function SubtitleOverlay({
         className
       )}
     >
-      <div
-        className="px-5 py-3 rounded-lg bg-black/85 shadow-lg backdrop-blur-sm"
-        style={{ minHeight: '2em' }}
-      >
+      <div style={{ minHeight: '2em' }}>
         <div
           className={cn(
-            'text-left text-lg font-medium transition-colors duration-200',
+            'text-left text-xl font-bold transition-colors duration-200',
             isCurrentlyInterim ? 'text-yellow-400' : 'text-white'
           )}
           style={{
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.9)',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 1), -1px -1px 2px rgba(0, 0, 0, 0.8), 1px -1px 2px rgba(0, 0, 0, 0.8), -1px 1px 2px rgba(0, 0, 0, 0.8)',
             lineHeight: '1.8',
           }}
         >
