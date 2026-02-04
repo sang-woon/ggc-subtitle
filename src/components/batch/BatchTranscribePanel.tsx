@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useBatchTranscribe, BatchStatus, BatchSubtitle } from '@/hooks/useBatchTranscribe';
 import { cn } from '@/lib/utils';
+import { requestNotificationPermission, notifyTranscriptionComplete, notifyTranscriptionFailed } from '@/lib/notification';
+import { getCachedTranscription, setCachedTranscription } from '@/lib/cache/transcriptionCache';
 
 interface BatchTranscribePanelProps {
   videoUrl: string;
@@ -113,13 +115,67 @@ export function BatchTranscribePanel({
     reset,
   } = useBatchTranscribe();
 
+  const [cachedSubtitles, setCachedSubtitles] = useState<BatchSubtitle[] | null>(null);
+  const [checkingCache, setCheckingCache] = useState(true);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+
   const { icon, color } = getStatusStyle(status);
+
+  // 캐시 확인
+  useEffect(() => {
+    const checkCache = async () => {
+      setCheckingCache(true);
+      const cached = await getCachedTranscription(videoUrl);
+      if (cached && cached.length > 0) {
+        console.log('[BatchPanel] Found cached subtitles:', cached.length);
+        setCachedSubtitles(cached);
+      }
+      setCheckingCache(false);
+    };
+    checkCache();
+  }, [videoUrl]);
+
+  // 알림 권한 요청
+  useEffect(() => {
+    const requestPermission = async () => {
+      const granted = await requestNotificationPermission();
+      setNotificationEnabled(granted);
+    };
+    requestPermission();
+  }, []);
+
+  // 전사 완료 시 알림 및 캐시 저장
+  useEffect(() => {
+    if (status === 'completed' && subtitles.length > 0) {
+      // 캐시 저장
+      setCachedTranscription(videoUrl, subtitles);
+
+      // 알림 (탭이 백그라운드일 때만)
+      if (document.hidden && notificationEnabled) {
+        notifyTranscriptionComplete(subtitles.length);
+      }
+
+      // 콜백 호출
+      onComplete?.(subtitles);
+    }
+  }, [status, subtitles, videoUrl, notificationEnabled, onComplete]);
+
+  // 전사 실패 시 알림
+  useEffect(() => {
+    if (status === 'failed' && error && document.hidden && notificationEnabled) {
+      notifyTranscriptionFailed(error);
+    }
+  }, [status, error, notificationEnabled]);
+
+  // 캐시된 자막 사용
+  const handleUseCached = useCallback(() => {
+    if (cachedSubtitles) {
+      onComplete?.(cachedSubtitles);
+    }
+  }, [cachedSubtitles, onComplete]);
 
   const handleStart = async () => {
     await startTranscription(videoUrl);
-    if (subtitles.length > 0 && onComplete) {
-      onComplete(subtitles);
-    }
   };
 
   const handleRetry = () => {
@@ -166,6 +222,21 @@ export function BatchTranscribePanel({
         </div>
       )}
 
+      {/* 캐시 안내 */}
+      {status === 'idle' && cachedSubtitles && (
+        <div className="mb-3 p-3 bg-green-900/30 border border-green-700 rounded">
+          <p className="text-green-300 text-sm mb-2">
+            ✅ 이전에 생성된 자막 {cachedSubtitles.length}개가 있습니다.
+          </p>
+          <button
+            onClick={handleUseCached}
+            className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+          >
+            캐시된 자막 사용
+          </button>
+        </div>
+      )}
+
       {/* 버튼 */}
       <div className="flex gap-2">
         {status === 'idle' && (
@@ -173,7 +244,7 @@ export function BatchTranscribePanel({
             onClick={handleStart}
             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
           >
-            🎙️ 전사 시작
+            🎙️ {cachedSubtitles ? '다시 전사' : '전사 시작'}
           </button>
         )}
 
