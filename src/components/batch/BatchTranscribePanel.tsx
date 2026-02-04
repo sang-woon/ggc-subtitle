@@ -18,7 +18,8 @@ interface BatchTranscribePanelProps {
  */
 export function isMp4Video(url: string): boolean {
   if (!url) return false;
-  return url.includes('.mp4') || url.includes('vodViewer');
+  // 실제 비디오 URL이 .mp4로 끝나는지 확인
+  return url.toLowerCase().includes('.mp4');
 }
 
 /**

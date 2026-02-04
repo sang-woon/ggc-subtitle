@@ -7,7 +7,7 @@ import { SubtitleOverlay } from '@/components/subtitle/SubtitleOverlay';
 import { SubtitleTimeline, TimelineSubtitle } from '@/components/subtitle/SubtitleTimeline';
 import { UrlInput } from '@/components/ui/UrlInput';
 import { LiveChannelList } from '@/components/live/LiveChannelList';
-import { BatchTranscribePanel, isMp4Video } from '@/components/batch/BatchTranscribePanel';
+import { BatchTranscribePanel } from '@/components/batch/BatchTranscribePanel';
 import { useSubtitleSession } from '@/hooks/useSubtitleSession';
 import { BatchSubtitle } from '@/hooks/useBatchTranscribe';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,7 @@ export default function Home() {
   }>({ checked: false, hasSubtitles: false, count: 0, midx: null });
   const [batchSubtitles, setBatchSubtitles] = useState<BatchSubtitle[]>([]);
   const [isBatchMode, setIsBatchMode] = useState(false);
+  const [actualVideoUrl, setActualVideoUrl] = useState<string | null>(null); // 실제 MP4/HLS URL
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const {
@@ -60,6 +61,8 @@ export default function Home() {
     setIsLoading(true);
     setUrlError(null);
     setPreCheckedSubtitles({ checked: false, hasSubtitles: false, count: 0, midx: null });
+    setIsBatchMode(false); // 생중계는 배치 모드 아님
+    setActualVideoUrl(null);
 
     try {
       // 생중계는 midx 없이 스트림 URL 직접 사용
@@ -114,13 +117,6 @@ export default function Home() {
       setVideoUrl(url);
       setMidx(extractedMidx);
 
-      // 2.5. MP4 여부 확인하여 배치 모드 설정
-      const isMp4 = isMp4Video(url);
-      setIsBatchMode(isMp4);
-      if (isMp4) {
-        setBatchSubtitles([]);
-      }
-
       // 3. KMS 페이지에서 비디오 URL 추출
       const response = await fetch(`/api/kms/video-url?url=${encodeURIComponent(url)}`);
       const data = await response.json();
@@ -129,8 +125,20 @@ export default function Home() {
         throw new Error(data.error || '비디오 URL을 가져올 수 없습니다');
       }
 
+      // 3.5. 실제 비디오 URL 저장 및 MP4 여부 확인
+      const extractedVideoUrl = data.videoUrl;
+      setActualVideoUrl(extractedVideoUrl);
+
+      // MP4 파일인 경우에만 배치 모드 활성화
+      const isActualMp4 = extractedVideoUrl.includes('.mp4');
+      console.log('[URL Submit] Extracted video URL:', extractedVideoUrl, 'isMp4:', isActualMp4);
+      setIsBatchMode(isActualMp4);
+      if (isActualMp4) {
+        setBatchSubtitles([]);
+      }
+
       // 4. 프록시 URL 사용 (CORS 우회)
-      const proxyUrl = `/api/kms/proxy?url=${encodeURIComponent(data.videoUrl)}`;
+      const proxyUrl = `/api/kms/proxy?url=${encodeURIComponent(extractedVideoUrl)}`;
       setHlsUrl(proxyUrl);
     } catch (err) {
       setUrlError(err instanceof Error ? err.message : 'URL 처리 실패');
@@ -276,6 +284,9 @@ export default function Home() {
               setHlsUrl(null);
               setMidx(null);
               setInputMode('live');
+              setIsBatchMode(false);
+              setActualVideoUrl(null);
+              setBatchSubtitles([]);
               stopSession();
             }}
           >
@@ -421,6 +432,9 @@ export default function Home() {
                       setVideoUrl(null);
                       setHlsUrl(null);
                       setLastDisplayedSubtitle('');
+                      setIsBatchMode(false);
+                      setActualVideoUrl(null);
+                      setBatchSubtitles([]);
                       stopSession();
                     }}
                     className="text-gray-400 hover:text-white text-sm"
@@ -455,9 +469,9 @@ export default function Home() {
               </div>
 
               {/* MP4 배치 전사 패널 */}
-              {isBatchMode && videoUrl && (
+              {isBatchMode && actualVideoUrl && (
                 <BatchTranscribePanel
-                  videoUrl={videoUrl}
+                  videoUrl={actualVideoUrl}
                   onComplete={handleBatchComplete}
                   onSubtitleClick={handleBatchSubtitleClick}
                   className="mt-4"
