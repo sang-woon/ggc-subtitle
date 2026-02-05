@@ -37,3 +37,9 @@ export interface ApiError {
     message: string;
   };
 }
+
+export interface VodRegisterFormType {
+  title: string;
+  meeting_date: string;
+  vod_url: string;
+}

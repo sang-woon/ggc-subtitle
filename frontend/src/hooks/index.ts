@@ -19,3 +19,12 @@ export type {
   UseSubtitleSearchReturn,
   FilterMode,
 } from './useSubtitleSearch';
+
+export { useSubtitleSync } from './useSubtitleSync';
+export type {
+  UseSubtitleSyncOptions,
+  UseSubtitleSyncReturn,
+} from './useSubtitleSync';
+
+export { useVodList } from './useVodList';
+export type { UseVodListOptions, UseVodListResult } from './useVodList';
