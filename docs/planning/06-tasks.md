@@ -93,7 +93,7 @@
 
 ### P1-R1: Meetings Resource (Backend)
 
-#### [ ] P1-R1-T1: Meetings API 구현
+#### [x] P1-R1-T1: Meetings API 구현
 - **담당**: backend-specialist
 - **리소스**: meetings
 - **엔드포인트**:
@@ -117,7 +117,7 @@
 
 ### P1-R2: Subtitles Resource (Backend)
 
-#### [ ] P1-R2-T1: Subtitles API 구현
+#### [x] P1-R2-T1: Subtitles API 구현
 - **담당**: backend-specialist
 - **리소스**: subtitles
 - **엔드포인트**:
@@ -134,7 +134,7 @@
 - **TDD**: RED → GREEN → REFACTOR
 - **완료 조건**: `pytest tests/api/test_subtitles.py` 통과
 
-#### [ ] P1-R2-T2: WebSocket 실시간 자막
+#### [x] P1-R2-T2: WebSocket 실시간 자막
 - **담당**: backend-specialist
 - **리소스**: subtitles (realtime)
 - **엔드포인트**: WS /ws/meetings/{meeting_id}/subtitles
@@ -147,7 +147,7 @@
 
 ### P1-S0: 공통 레이아웃 (Frontend)
 
-#### [ ] P1-S0-T1: 공통 컴포넌트 구현
+#### [x] P1-S0-T1: 공통 컴포넌트 구현
 - **담당**: frontend-specialist
 - **컴포넌트**:
   | 컴포넌트 | 파일 | 기능 |
@@ -164,7 +164,7 @@
 - **TDD**: 컴포넌트 테스트 먼저 작성
 - **완료 조건**: `npm test -- --coverage` 80%+ 커버리지
 
-#### [ ] P1-S0-T2: 레이아웃 설정
+#### [x] P1-S0-T2: 레이아웃 설정
 - **담당**: frontend-specialist
 - **작업**:
   - RootLayout 설정
