@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { highlightText as highlightTextUtil } from '../utils/highlight';
+
 export interface SubtitleItemProps {
   startTime: number;
   text: string;
@@ -18,28 +20,28 @@ function formatTime(seconds: number): string {
     .join(':');
 }
 
-function highlightText(text: string, query?: string): React.ReactNode {
+/**
+ * Renders text with optional query highlighting
+ * Uses the shared highlight utility for XSS-safe highlighting
+ */
+function renderHighlightedText(text: string, query?: string): React.ReactNode {
   if (!query || query.trim() === '') {
     return text;
   }
 
-  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-  const parts = text.split(regex);
+  const result = highlightTextUtil(text, query);
 
-  return parts.map((part, index) => {
-    if (part.toLowerCase() === query.toLowerCase()) {
-      return (
-        <span key={index} className="bg-highlight px-0.5 rounded">
-          {part}
-        </span>
-      );
-    }
-    return part;
-  });
-}
+  if (!result.hasMatch) {
+    return text;
+  }
 
-function escapeRegex(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Using dangerouslySetInnerHTML is safe here because highlightTextUtil
+  // properly escapes all HTML in the input text before adding highlight marks
+  return (
+    <span
+      dangerouslySetInnerHTML={{ __html: result.html }}
+    />
+  );
 }
 
 export default function SubtitleItem({
@@ -66,7 +68,7 @@ export default function SubtitleItem({
         {formatTime(startTime)}
       </span>
       <span className="block text-sm text-gray-900 leading-relaxed">
-        {highlightText(text, highlightQuery)}
+        {renderHighlightedText(text, highlightQuery)}
       </span>
     </button>
   );

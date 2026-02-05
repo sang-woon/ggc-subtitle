@@ -8,14 +8,26 @@ const createJestConfig = nextJest({
 const config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testEnvironment: 'jsdom',
+  testPathIgnorePatterns: ['<rootDir>/e2e/', '<rootDir>/node_modules/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
     'src/components/**/*.{ts,tsx}',
+    'src/hooks/**/*.{ts,tsx}',
+    'src/lib/**/*.{ts,tsx}',
     '!src/components/**/*.test.{ts,tsx}',
     '!src/components/**/__tests__/**',
     '!src/components/**/index.{ts,tsx}',
+    '!src/hooks/**/*.test.{ts,tsx}',
+    '!src/hooks/**/__tests__/**',
+    '!src/lib/**/*.test.{ts,tsx}',
+    '!src/lib/**/__tests__/**',
+    '!src/lib/.gitkeep',
+    '!src/hooks/.gitkeep',
+    '!src/hooks/**/index.{ts,tsx}',
+    '!src/lib/**/index.{ts,tsx}',
+    '!src/lib/supabase.ts',
   ],
   coverageThreshold: {
     global: {
