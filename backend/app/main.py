@@ -3,6 +3,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.meetings import router as meetings_router
+from app.api.subtitles import router as subtitles_router
+from app.api.websocket import router as websocket_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -10,6 +13,11 @@ app = FastAPI(
     description="경기도의회 회의 영상에 실시간/VOD 자막을 제공하는 API",
     version="0.1.0",
 )
+
+# API 라우터 등록
+app.include_router(meetings_router)
+app.include_router(subtitles_router)
+app.include_router(websocket_router)
 
 # CORS 설정
 app.add_middleware(
