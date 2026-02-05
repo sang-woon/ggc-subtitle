@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_key: str = ""
 
-    # OpenAI
-    openai_api_key: str = ""
+    # Deepgram STT (Nova-3)
+    deepgram_api_key: str = ""
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
