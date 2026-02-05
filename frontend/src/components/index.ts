@@ -27,3 +27,16 @@ export type { SearchInputProps } from './SearchInput';
 
 export { default as SubtitlePanel } from './SubtitlePanel';
 export type { SubtitlePanelProps } from './SubtitlePanel';
+
+// VOD Components
+export { default as Mp4Player } from './Mp4Player';
+export type { Mp4PlayerProps } from './Mp4Player';
+
+export { default as VideoControls } from './VideoControls';
+export type { VideoControlsProps } from './VideoControls';
+
+export { default as VodTable } from './VodTable';
+export type { VodTableProps } from './VodTable';
+
+export { default as Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
