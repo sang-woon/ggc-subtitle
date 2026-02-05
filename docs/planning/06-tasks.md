@@ -186,7 +186,7 @@
 
 ### P2-R1: Whisper 통합 (Backend)
 
-#### [ ] P2-R1-T1: Whisper 서비스 구현
+#### [x] P2-R1-T1: Deepgram STT 서비스 구현
 - **담당**: backend-specialist
 - **작업**:
   - OpenAI Whisper API 클라이언트
@@ -200,7 +200,7 @@
 - **환경변수**: `OPENAI_API_KEY`
 - **완료 조건**: Whisper API 호출 및 후처리 테스트 통과
 
-#### [ ] P2-R1-T2: HLS 스트림 처리
+#### [x] P2-R1-T2: HLS 스트림 처리
 - **담당**: backend-specialist
 - **작업**:
   - HLS 세그먼트 다운로드
@@ -214,7 +214,7 @@
 
 ### P2-S1: 홈 대시보드 화면
 
-#### [ ] P2-S1-T1: 홈 UI 구현
+#### [x] P2-S1-T1: 홈 UI 구현
 - **담당**: frontend-specialist
 - **화면**: S-01 (/)
 - **컴포넌트**:
@@ -233,7 +233,7 @@
 - **데모**: http://localhost:3000/
 - **완료 조건**: 컴포넌트 렌더링 + API 연동 테스트 통과
 
-#### [ ] P2-S1-T2: 홈 API 연동
+#### [x] P2-S1-T2: 홈 API 연동
 - **담당**: frontend-specialist
 - **작업**:
   - `/api/meetings/live` 호출
@@ -246,7 +246,7 @@
 
 ### P2-S2: 실시간 뷰어 화면
 
-#### [ ] P2-S2-T1: 실시간 뷰어 UI 구현
+#### [x] P2-S2-T1: 실시간 뷰어 UI 구현
 - **담당**: frontend-specialist
 - **화면**: S-02 (/live)
 - **컴포넌트**:
@@ -263,7 +263,7 @@
   - `frontend/src/components/SubtitlePanel.tsx`
 - **완료 조건**: 레이아웃 렌더링 + HLS 재생 테스트 통과
 
-#### [ ] P2-S2-T2: WebSocket 실시간 자막 연동
+#### [x] P2-S2-T2: WebSocket 실시간 자막 연동
 - **담당**: frontend-specialist
 - **작업**:
   - WebSocket 연결 (`/ws/meetings/{id}/subtitles`)
@@ -274,7 +274,7 @@
   - `frontend/src/hooks/useSubtitleWebSocket.ts`
 - **완료 조건**: 실시간 자막 수신 + 표시 테스트 통과
 
-#### [ ] P2-S2-T3: 키워드 검색 기능
+#### [x] P2-S2-T3: 키워드 검색 기능
 - **담당**: frontend-specialist
 - **작업**:
   - 검색어 입력 → 자막 하이라이트 (노란색)
@@ -284,7 +284,7 @@
   - `frontend/src/utils/highlight.ts`
 - **완료 조건**: 검색 + 하이라이트 + 시점 이동 테스트 통과
 
-### [ ] P2-V: Phase 2 연결점 검증
+### [x] P2-V: Phase 2 연결점 검증
 - **담당**: test-specialist
 - **검증 항목**:
   - [ ] `/` → `/live` 네비게이션 (방송중일 때만)
