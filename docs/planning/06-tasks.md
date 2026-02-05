@@ -21,7 +21,7 @@
 
 > **Git Worktree**: 불필요 (main 브랜치에서 직접 작업)
 
-### [ ] P0-T1: 프로젝트 구조 생성
+### [x] P0-T1: 프로젝트 구조 생성
 - **담당**: setup
 - **작업**:
   - Next.js 14 프로젝트 생성 (frontend/)
@@ -52,7 +52,7 @@
   ```
 - **완료 조건**: `npm run dev` (frontend), `uvicorn app.main:app` (backend) 실행 가능
 
-### [ ] P0-T2: 개발 환경 설정
+### [x] P0-T2: 개발 환경 설정
 - **담당**: setup
 - **작업**:
   - ESLint, Prettier 설정 (frontend)
@@ -62,7 +62,7 @@
 - **파일**: `.eslintrc.js`, `.prettierrc`, `pyproject.toml`
 - **완료 조건**: `npm run lint`, `ruff check` 통과
 
-### [ ] P0-T3: Supabase 연동
+### [x] P0-T3: Supabase 연동
 - **담당**: setup
 - **작업**:
   - Supabase 프로젝트 생성
@@ -71,7 +71,7 @@
 - **파일**: `backend/app/core/database.py`, `frontend/src/lib/supabase.ts`
 - **완료 조건**: DB 연결 테스트 통과
 
-### [ ] P0-T4: 데이터베이스 마이그레이션
+### [x] P0-T4: 데이터베이스 마이그레이션
 - **담당**: setup
 - **작업**:
   - meetings 테이블 생성
