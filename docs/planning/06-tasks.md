@@ -304,7 +304,7 @@
 
 ### P3-R1: VOD 자막 생성 (Backend)
 
-#### [ ] P3-R1-T1: VOD 자막 생성 서비스
+#### [x] P3-R1-T1: VOD 자막 생성 서비스
 - **담당**: backend-specialist
 - **작업**:
   - MP4 → 오디오 추출 (ffmpeg)
@@ -319,7 +319,7 @@
 
 ### P3-S1: VOD 목록 화면
 
-#### [ ] P3-S1-T1: VOD 목록 UI 구현
+#### [x] P3-S1-T1: VOD 목록 UI 구현
 - **담당**: frontend-specialist
 - **화면**: S-03 (/vod)
 - **컴포넌트**:
@@ -334,7 +334,7 @@
   - `frontend/src/components/VodTable.tsx`
 - **완료 조건**: 테이블 렌더링 + 페이지네이션 테스트 통과
 
-#### [ ] P3-S1-T2: VOD 등록 모달
+#### [x] P3-S1-T2: VOD 등록 모달
 - **담당**: frontend-specialist
 - **화면**: M-01
 - **컴포넌트**: VodRegisterModal
@@ -350,7 +350,7 @@
 
 ### P3-S2: VOD 뷰어 화면
 
-#### [ ] P3-S2-T1: VOD 뷰어 UI 구현
+#### [x] P3-S2-T1: VOD 뷰어 UI 구현
 - **담당**: frontend-specialist
 - **화면**: S-04 (/vod/:id)
 - **컴포넌트**:
@@ -365,7 +365,7 @@
   - `frontend/src/components/Mp4Player.tsx`
 - **완료 조건**: 영상 재생 + 자막 표시 테스트 통과
 
-#### [ ] P3-S2-T2: 자막 동기화 기능
+#### [x] P3-S2-T2: 자막 동기화 기능
 - **담당**: frontend-specialist
 - **작업**:
   - 영상 시간 → 현재 자막 하이라이트
@@ -375,14 +375,14 @@
   - `frontend/src/hooks/useSubtitleSync.ts`
 - **완료 조건**: 자막 동기화 + 시점 이동 테스트 통과
 
-### [ ] P3-V: Phase 3 연결점 검증
+### [x] P3-V: Phase 3 연결점 검증
 - **담당**: test-specialist
 - **검증 항목**:
-  - [ ] `/` → `/vod` 네비게이션
-  - [ ] `/vod` → `/vod/:id` 네비게이션
-  - [ ] VOD 등록 모달 동작
-  - [ ] 자막 상태 배지 표시
-  - [ ] 자막 동기화
+  - [x] `/` → `/vod` 네비게이션
+  - [x] `/vod` → `/vod/:id` 네비게이션
+  - [x] VOD 등록 모달 동작
+  - [x] 자막 상태 배지 표시
+  - [x] 자막 동기화
 - **파일**: `frontend/e2e/phase3-vod.spec.ts`
 - **완료 조건**: E2E 테스트 통과
 
