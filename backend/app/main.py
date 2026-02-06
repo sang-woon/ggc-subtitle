@@ -14,12 +14,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# API 라우터 등록
-app.include_router(meetings_router)
-app.include_router(subtitles_router)
-app.include_router(websocket_router)
-
-# CORS 설정
+# CORS 설정 (라우터 등록 전에 추가)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -27,6 +22,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API 라우터 등록
+app.include_router(meetings_router)
+app.include_router(subtitles_router)
+app.include_router(websocket_router)
 
 
 @app.get("/")

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     deepgram_api_key: str = ""
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003"]
 
     # 서버
     debug: bool = True
