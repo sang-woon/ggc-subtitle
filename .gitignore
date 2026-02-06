@@ -97,3 +97,14 @@ dmypy.json
 # OS
 Thumbs.db
 ehthumbs.db
+nul
+
+# Playwright MCP
+.playwright-mcp/
+
+# Screenshots (demo)
+*.png
+
+# Root package files (supabase CLI)
+/package.json
+/package-lock.json
