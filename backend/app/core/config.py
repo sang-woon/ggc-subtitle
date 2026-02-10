@@ -25,7 +25,14 @@ class Settings(BaseSettings):
     deepgram_api_key: str = ""
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:3003",
+        "http://localhost:3004",
+        "http://localhost:3005",
+    ]
     cors_origin_regex: str = r"https://.*\.vercel\.app"
 
     # STT 자동 시작 (방송중 채널 감지 시 자동 STT)

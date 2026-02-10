@@ -45,8 +45,7 @@ app = FastAPI(
 # CORS 설정 (라우터 등록 전에 추가)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_origin_regex=settings.cors_origin_regex,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
