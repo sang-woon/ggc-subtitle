@@ -370,6 +370,7 @@ function LivePageContent() {
               searchQuery={searchQuery}
               currentTime={currentTime}
               onSubtitleClick={handleSubtitleClick}
+              interimText={interimText}
             />
           </div>
         </div>

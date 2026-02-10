@@ -12,6 +12,8 @@ export interface SubtitlePanelProps {
   currentTime?: number;
   autoScroll?: boolean;
   onSubtitleClick?: (startTime: number) => void;
+  /** STT interim (미확정) 텍스트 - 확정 전 실시간 미리보기 */
+  interimText?: string;
 }
 
 const SubtitlePanel = React.memo(function SubtitlePanel({
@@ -20,6 +22,7 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
   currentTime,
   autoScroll = true,
   onSubtitleClick,
+  interimText,
 }: SubtitlePanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const prevSubtitleCountRef = useRef(subtitles.length);
@@ -60,7 +63,7 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
 
       {/* Subtitle list */}
       <div ref={listRef} className="flex-1 overflow-y-auto">
-        {subtitles.length === 0 ? (
+        {subtitles.length === 0 && !interimText ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
             <div
               data-testid="loading-spinner"
@@ -69,7 +72,26 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
             <p className="text-sm">자막을 불러오는 중...</p>
           </div>
         ) : (
-          [...subtitles].reverse().map((subtitle) => (
+          <>
+            {/* Interim (미확정) 실시간 자막 */}
+            {interimText && (
+              <div
+                data-testid="interim-subtitle"
+                className="px-4 py-3 border-b border-blue-100 bg-blue-50/50"
+              >
+                <span className="flex items-center gap-2 mb-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                  </span>
+                  <span className="text-xs font-medium text-blue-600">인식 중...</span>
+                </span>
+                <span className="block text-sm text-gray-500 italic leading-relaxed">
+                  {interimText}
+                </span>
+              </div>
+            )}
+            {[...subtitles].reverse().map((subtitle) => (
             <SubtitleItem
               key={subtitle.id}
               startTime={subtitle.start_time}
@@ -79,7 +101,8 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
               highlightQuery={searchQuery}
               onClick={onSubtitleClick}
             />
-          ))
+          ))}
+          </>
         )}
       </div>
     </div>
