@@ -11,9 +11,12 @@ export interface HlsPlayerProps {
   onReady?: () => void;
 }
 
+const MAX_NETWORK_RETRIES = 3;
+
 const HlsPlayer = React.memo(function HlsPlayer({ streamUrl, videoRef, onError, onReady }: HlsPlayerProps) {
   const internalRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const networkRetryCount = useRef(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -29,6 +32,7 @@ const HlsPlayer = React.memo(function HlsPlayer({ streamUrl, videoRef, onError, 
 
     setIsLoading(true);
     setHasError(false);
+    networkRetryCount.current = 0;
 
     // Cleanup previous HLS instance
     if (hlsRef.current) {
@@ -92,8 +96,16 @@ const HlsPlayer = React.memo(function HlsPlayer({ streamUrl, videoRef, onError, 
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('HLS network error, recovering...');
-              hls.startLoad();
+              networkRetryCount.current += 1;
+              if (networkRetryCount.current <= MAX_NETWORK_RETRIES) {
+                console.warn(`HLS network error, recovering... (${networkRetryCount.current}/${MAX_NETWORK_RETRIES})`);
+                hls.startLoad();
+              } else {
+                console.error('HLS network error: max retries exceeded');
+                setHasError(true);
+                setIsLoading(false);
+                onError?.(new Error('스트림에 연결할 수 없습니다'));
+              }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.warn('HLS media error, recovering...');
@@ -170,8 +182,8 @@ const HlsPlayer = React.memo(function HlsPlayer({ streamUrl, videoRef, onError, 
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-center">영상을 불러올 수 없습니다.</p>
-          <p className="text-sm text-gray-400 mt-1">새로고침해주세요.</p>
+          <p className="text-center">영상을 불러올 수 없습니다</p>
+          <p className="text-sm text-gray-400 mt-1">현재 방송 중이 아니거나 스트림에 문제가 있습니다</p>
         </div>
       )}
     </div>
