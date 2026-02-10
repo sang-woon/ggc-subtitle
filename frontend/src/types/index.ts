@@ -51,7 +51,5 @@ export interface ChannelType {
 }
 
 export interface VodRegisterFormType {
-  title: string;
-  meeting_date: string;
-  vod_url: string;
+  url: string;
 }

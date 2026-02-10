@@ -8,12 +8,8 @@ interface VodRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: VodRegisterFormType) => void;
-}
-
-interface FormErrors {
-  title?: string;
-  meeting_date?: string;
-  vod_url?: string;
+  isLoading?: boolean;
+  errorMessage?: string;
 }
 
 function isValidUrl(url: string): boolean {
@@ -25,18 +21,14 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-export default function VodRegisterModal({ isOpen, onClose, onSubmit }: VodRegisterModalProps) {
-  const [title, setTitle] = useState('');
-  const [meetingDate, setMeetingDate] = useState('');
-  const [vodUrl, setVodUrl] = useState('');
-  const [errors, setErrors] = useState<FormErrors>({});
+export default function VodRegisterModal({ isOpen, onClose, onSubmit, isLoading, errorMessage }: VodRegisterModalProps) {
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
-      setTitle('');
-      setMeetingDate('');
-      setVodUrl('');
-      setErrors({});
+      setUrl('');
+      setError('');
     }
   }, [isOpen]);
 
@@ -44,75 +36,32 @@ export default function VodRegisterModal({ isOpen, onClose, onSubmit }: VodRegis
     return null;
   }
 
-  function validate(): FormErrors {
-    const newErrors: FormErrors = {};
-
-    if (!title.trim()) {
-      newErrors.title = '회의 제목을 입력해주세요.';
-    } else if (title.trim().length < 2) {
-      newErrors.title = '회의 제목은 2자 이상이어야 합니다.';
+  function validate(): string {
+    if (!url.trim()) {
+      return 'VOD URL을 입력해주세요.';
     }
-
-    if (!meetingDate) {
-      newErrors.meeting_date = '회의 날짜를 선택해주세요.';
+    if (!isValidUrl(url.trim())) {
+      return '올바른 URL 형식을 입력해주세요.';
     }
-
-    if (!vodUrl.trim()) {
-      newErrors.vod_url = 'VOD URL을 입력해주세요.';
-    } else if (!isValidUrl(vodUrl.trim())) {
-      newErrors.vod_url = '올바른 URL 형식을 입력해주세요.';
-    }
-
-    return newErrors;
+    return '';
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const validationErrors = validate();
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    onSubmit({
-      title: title.trim(),
-      meeting_date: meetingDate,
-      vod_url: vodUrl.trim(),
-    });
+    onSubmit({ url: url.trim() });
   }
 
-  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setTitle(e.target.value);
-    if (errors.title) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.title;
-        return next;
-      });
-    }
-  }
-
-  function handleMeetingDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setMeetingDate(e.target.value);
-    if (errors.meeting_date) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.meeting_date;
-        return next;
-      });
-    }
-  }
-
-  function handleVodUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setVodUrl(e.target.value);
-    if (errors.vod_url) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.vod_url;
-        return next;
-      });
+  function handleUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setUrl(e.target.value);
+    if (error) {
+      setError('');
     }
   }
 
@@ -134,46 +83,12 @@ export default function VodRegisterModal({ isOpen, onClose, onSubmit }: VodRegis
         aria-modal="true"
         className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
       >
-        <h2 className="mb-6 text-xl font-semibold text-gray-900">VOD 등록</h2>
+        <h2 className="mb-2 text-xl font-semibold text-gray-900">VOD 등록</h2>
+        <p className="mb-6 text-sm text-gray-500">
+          KMS URL을 입력하면 제목, 날짜, 영상 정보가 자동으로 추출됩니다.
+        </p>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-4">
-            <label htmlFor="vod-title" className="mb-1 block text-sm font-medium text-gray-700">
-              회의 제목
-            </label>
-            <input
-              id="vod-title"
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              placeholder="회의 제목을 입력하세요"
-              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.title ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="vod-meeting-date" className="mb-1 block text-sm font-medium text-gray-700">
-              회의 날짜
-            </label>
-            <input
-              id="vod-meeting-date"
-              type="date"
-              value={meetingDate}
-              onChange={handleMeetingDateChange}
-              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.meeting_date ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.meeting_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.meeting_date}</p>
-            )}
-          </div>
-
           <div className="mb-6">
             <label htmlFor="vod-url" className="mb-1 block text-sm font-medium text-gray-700">
               VOD URL
@@ -181,15 +96,19 @@ export default function VodRegisterModal({ isOpen, onClose, onSubmit }: VodRegis
             <input
               id="vod-url"
               type="url"
-              value={vodUrl}
-              onChange={handleVodUrlChange}
-              placeholder="https://example.com/vod/video.mp4"
+              value={url}
+              onChange={handleUrlChange}
+              placeholder="http://kms.ggc.go.kr/caster/player/vodViewer.do?midx=..."
+              disabled={isLoading}
               className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.vod_url ? 'border-red-500' : 'border-gray-300'
-              }`}
+                error || errorMessage ? 'border-red-500' : 'border-gray-300'
+              } ${isLoading ? 'bg-gray-100' : ''}`}
             />
-            {errors.vod_url && (
-              <p className="mt-1 text-sm text-red-600">{errors.vod_url}</p>
+            {error && (
+              <p className="mt-1 text-sm text-red-600">{error}</p>
+            )}
+            {errorMessage && !error && (
+              <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
             )}
           </div>
 
@@ -197,15 +116,17 @@ export default function VodRegisterModal({ isOpen, onClose, onSubmit }: VodRegis
             <button
               type="button"
               onClick={onClose}
+              disabled={isLoading}
               className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               취소
             </button>
             <button
               type="submit"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 active:bg-blue-700 transition-colors"
+              disabled={isLoading}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 active:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              등록
+              {isLoading ? '등록 중...' : '등록'}
             </button>
           </div>
         </form>

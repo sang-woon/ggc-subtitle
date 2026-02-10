@@ -35,12 +35,16 @@ describe('VodRegisterModal', () => {
       expect(screen.getByText('VOD 등록')).toBeInTheDocument();
     });
 
-    it('renders all form fields', () => {
+    it('renders URL form field', () => {
       render(<VodRegisterModal {...defaultProps} />);
 
-      expect(screen.getByLabelText('회의 제목')).toBeInTheDocument();
-      expect(screen.getByLabelText('회의 날짜')).toBeInTheDocument();
       expect(screen.getByLabelText('VOD URL')).toBeInTheDocument();
+    });
+
+    it('renders description text', () => {
+      render(<VodRegisterModal {...defaultProps} />);
+
+      expect(screen.getByText(/KMS URL을 입력하면/)).toBeInTheDocument();
     });
 
     it('renders cancel and submit buttons', () => {
@@ -96,56 +100,20 @@ describe('VodRegisterModal', () => {
   });
 
   describe('form validation', () => {
-    it('shows error when title is empty on submit', async () => {
+    it('shows error when URL is empty on submit', async () => {
       const user = userEvent.setup();
       render(<VodRegisterModal {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: '등록' }));
-
-      expect(screen.getByText('회의 제목을 입력해주세요.')).toBeInTheDocument();
-      expect(defaultProps.onSubmit).not.toHaveBeenCalled();
-    });
-
-    it('shows error when title is less than 2 characters', async () => {
-      const user = userEvent.setup();
-      render(<VodRegisterModal {...defaultProps} />);
-
-      await user.type(screen.getByLabelText('회의 제목'), '가');
-      await user.click(screen.getByRole('button', { name: '등록' }));
-
-      expect(screen.getByText('회의 제목은 2자 이상이어야 합니다.')).toBeInTheDocument();
-      expect(defaultProps.onSubmit).not.toHaveBeenCalled();
-    });
-
-    it('shows error when meeting_date is empty on submit', async () => {
-      const user = userEvent.setup();
-      render(<VodRegisterModal {...defaultProps} />);
-
-      await user.type(screen.getByLabelText('회의 제목'), '테스트 회의');
-      await user.click(screen.getByRole('button', { name: '등록' }));
-
-      expect(screen.getByText('회의 날짜를 선택해주세요.')).toBeInTheDocument();
-      expect(defaultProps.onSubmit).not.toHaveBeenCalled();
-    });
-
-    it('shows error when vod_url is empty on submit', async () => {
-      const user = userEvent.setup();
-      render(<VodRegisterModal {...defaultProps} />);
-
-      await user.type(screen.getByLabelText('회의 제목'), '테스트 회의');
-      await user.type(screen.getByLabelText('회의 날짜'), '2024-01-15');
       await user.click(screen.getByRole('button', { name: '등록' }));
 
       expect(screen.getByText('VOD URL을 입력해주세요.')).toBeInTheDocument();
       expect(defaultProps.onSubmit).not.toHaveBeenCalled();
     });
 
-    it('shows error when vod_url is not a valid URL', async () => {
+    it('shows error when URL is not a valid URL', async () => {
       const user = userEvent.setup();
       render(<VodRegisterModal {...defaultProps} />);
 
-      await user.type(screen.getByLabelText('회의 제목'), '테스트 회의');
-      await user.type(screen.getByLabelText('회의 날짜'), '2024-01-15');
       await user.type(screen.getByLabelText('VOD URL'), 'not-a-valid-url');
       await user.click(screen.getByRole('button', { name: '등록' }));
 
@@ -153,73 +121,52 @@ describe('VodRegisterModal', () => {
       expect(defaultProps.onSubmit).not.toHaveBeenCalled();
     });
 
-    it('shows multiple errors at once', async () => {
+    it('clears error when user starts typing', async () => {
       const user = userEvent.setup();
       render(<VodRegisterModal {...defaultProps} />);
 
+      // Submit to trigger error
       await user.click(screen.getByRole('button', { name: '등록' }));
-
-      expect(screen.getByText('회의 제목을 입력해주세요.')).toBeInTheDocument();
-      expect(screen.getByText('회의 날짜를 선택해주세요.')).toBeInTheDocument();
       expect(screen.getByText('VOD URL을 입력해주세요.')).toBeInTheDocument();
-    });
-
-    it('clears errors when user starts typing', async () => {
-      const user = userEvent.setup();
-      render(<VodRegisterModal {...defaultProps} />);
-
-      // Submit to trigger errors
-      await user.click(screen.getByRole('button', { name: '등록' }));
-      expect(screen.getByText('회의 제목을 입력해주세요.')).toBeInTheDocument();
 
       // Start typing to clear error
-      await user.type(screen.getByLabelText('회의 제목'), '테');
+      await user.type(screen.getByLabelText('VOD URL'), 'h');
 
-      expect(screen.queryByText('회의 제목을 입력해주세요.')).not.toBeInTheDocument();
+      expect(screen.queryByText('VOD URL을 입력해주세요.')).not.toBeInTheDocument();
     });
   });
 
   describe('successful submission', () => {
-    it('calls onSubmit with form data when all fields are valid', async () => {
+    it('calls onSubmit with URL when field is valid', async () => {
       const user = userEvent.setup();
       render(<VodRegisterModal {...defaultProps} />);
 
-      await user.type(screen.getByLabelText('회의 제목'), '제1차 본회의');
-      await user.type(screen.getByLabelText('회의 날짜'), '2024-01-15');
-      await user.type(screen.getByLabelText('VOD URL'), 'https://example.com/vod/123.mp4');
+      await user.type(screen.getByLabelText('VOD URL'), 'http://kms.ggc.go.kr/caster/player/vodViewer.do?midx=137982');
       await user.click(screen.getByRole('button', { name: '등록' }));
 
       expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
       expect(defaultProps.onSubmit).toHaveBeenCalledWith({
-        title: '제1차 본회의',
-        meeting_date: '2024-01-15',
-        vod_url: 'https://example.com/vod/123.mp4',
+        url: 'http://kms.ggc.go.kr/caster/player/vodViewer.do?midx=137982',
       } satisfies VodRegisterFormType);
     });
 
-    it('accepts http URLs as valid', async () => {
+    it('accepts https URLs as valid', async () => {
       const user = userEvent.setup();
       render(<VodRegisterModal {...defaultProps} />);
 
-      await user.type(screen.getByLabelText('회의 제목'), '제2차 본회의');
-      await user.type(screen.getByLabelText('회의 날짜'), '2024-02-20');
-      await user.type(screen.getByLabelText('VOD URL'), 'http://example.com/vod/456.mp4');
+      await user.type(screen.getByLabelText('VOD URL'), 'https://example.com/vod/456.mp4');
       await user.click(screen.getByRole('button', { name: '등록' }));
 
       expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
       expect(defaultProps.onSubmit).toHaveBeenCalledWith({
-        title: '제2차 본회의',
-        meeting_date: '2024-02-20',
-        vod_url: 'http://example.com/vod/456.mp4',
+        url: 'https://example.com/vod/456.mp4',
       });
     });
 
-    it('resets form after successful submission', async () => {
+    it('resets form after modal is closed and reopened', async () => {
       const user = userEvent.setup();
       const { rerender } = render(<VodRegisterModal {...defaultProps} />);
 
-      await user.type(screen.getByLabelText('회의 제목'), '제1차 본회의');
-      await user.type(screen.getByLabelText('회의 날짜'), '2024-01-15');
       await user.type(screen.getByLabelText('VOD URL'), 'https://example.com/vod/123.mp4');
       await user.click(screen.getByRole('button', { name: '등록' }));
 
@@ -227,9 +174,31 @@ describe('VodRegisterModal', () => {
       rerender(<VodRegisterModal {...defaultProps} isOpen={false} />);
       rerender(<VodRegisterModal {...defaultProps} isOpen={true} />);
 
-      expect(screen.getByLabelText('회의 제목')).toHaveValue('');
-      expect(screen.getByLabelText('회의 날짜')).toHaveValue('');
       expect(screen.getByLabelText('VOD URL')).toHaveValue('');
+    });
+  });
+
+  describe('loading state', () => {
+    it('shows loading text on submit button', () => {
+      render(<VodRegisterModal {...defaultProps} isLoading={true} />);
+
+      expect(screen.getByRole('button', { name: '등록 중...' })).toBeInTheDocument();
+    });
+
+    it('disables input and buttons when loading', () => {
+      render(<VodRegisterModal {...defaultProps} isLoading={true} />);
+
+      expect(screen.getByLabelText('VOD URL')).toBeDisabled();
+      expect(screen.getByRole('button', { name: '등록 중...' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+    });
+  });
+
+  describe('error message from parent', () => {
+    it('displays errorMessage prop', () => {
+      render(<VodRegisterModal {...defaultProps} errorMessage="이미 등록된 VOD입니다." />);
+
+      expect(screen.getByText('이미 등록된 VOD입니다.')).toBeInTheDocument();
     });
   });
 

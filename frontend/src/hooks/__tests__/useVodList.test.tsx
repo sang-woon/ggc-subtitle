@@ -41,14 +41,6 @@ describe('useVodList', () => {
     },
   ];
 
-  const mockResponse = {
-    data: mockVods,
-    total: 15,
-    page: 1,
-    per_page: 10,
-    has_next: true,
-  };
-
   // Wrapper to provide SWR config
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
@@ -58,7 +50,7 @@ describe('useVodList', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedApiClient.mockResolvedValue(mockResponse);
+    mockedApiClient.mockResolvedValue(mockVods);
   });
 
   describe('Initial State', () => {
@@ -132,21 +124,29 @@ describe('useVodList', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.total).toBe(15);
+      // Backend returns plain array; total is array length
+      expect(result.current.total).toBe(mockVods.length);
       expect(result.current.page).toBe(1);
       expect(result.current.perPage).toBe(10);
-      expect(result.current.hasNext).toBe(true);
+      // 2 items < 10 perPage, so hasNext is false
+      expect(result.current.hasNext).toBe(false);
     });
 
-    it('calculates totalPages correctly', async () => {
+    it('sets hasNext true when returned items fill the page', async () => {
+      // Create 10 items to fill a page
+      const fullPage = Array.from({ length: 10 }, (_, i) => ({
+        ...mockVods[0],
+        id: `vod-${i}`,
+      }));
+      mockedApiClient.mockResolvedValue(fullPage);
+
       const { result } = renderHook(() => useVodList(), { wrapper });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      // total: 15, per_page: 10 => 2 pages
-      expect(result.current.totalPages).toBe(2);
+      expect(result.current.hasNext).toBe(true);
     });
   });
 

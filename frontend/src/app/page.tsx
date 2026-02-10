@@ -6,34 +6,43 @@ import Link from 'next/link';
 
 import { Header, LiveMeetingCard, RecentVodList, VodRegisterModal } from '@/components';
 import { useLiveMeeting, useRecentVods } from '@/hooks';
-import { apiClient } from '@/lib/api';
+import { apiClient, ApiError } from '@/lib/api';
 import type { VodRegisterFormType, MeetingType } from '@/types';
 
 export default function Home() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState('');
 
   // API 연동 훅 사용
   const { meeting: liveMeeting, isLoading: isLiveLoading, error: liveError } = useLiveMeeting();
-  const { vods: recentVods, isLoading: isVodsLoading, error: vodsError } = useRecentVods({ limit: 5 });
+  const { vods: recentVods, isLoading: isVodsLoading, error: vodsError, mutate: refreshVods } = useRecentVods({ limit: 5 });
 
   const handleRegisterClick = () => {
+    setRegisterError('');
     setIsRegisterModalOpen(true);
   };
 
   const handleRegisterSubmit = async (data: VodRegisterFormType) => {
+    setRegisterLoading(true);
+    setRegisterError('');
     try {
-      await apiClient<MeetingType>('/api/meetings', {
+      await apiClient<MeetingType>('/api/meetings/from-url', {
         method: 'POST',
-        body: JSON.stringify({
-          title: data.title,
-          meeting_date: data.meeting_date,
-          vod_url: data.vod_url,
-          status: 'ended',
-        }),
+        body: JSON.stringify({ url: data.url }),
       });
       setIsRegisterModalOpen(false);
-    } catch {
-      alert('VOD 등록에 실패했습니다.');
+      refreshVods();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setRegisterError('이미 등록된 VOD입니다.');
+      } else if (err instanceof ApiError && err.status === 422) {
+        setRegisterError('URL에서 영상 정보를 추출할 수 없습니다.');
+      } else {
+        setRegisterError('VOD 등록에 실패했습니다.');
+      }
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -107,6 +116,8 @@ export default function Home() {
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
         onSubmit={handleRegisterSubmit}
+        isLoading={registerLoading}
+        errorMessage={registerError}
       />
     </div>
   );

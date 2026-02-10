@@ -87,7 +87,7 @@ describe('useRecentVods', () => {
 
   describe('Data fetching', () => {
     it('should fetch recent VOD list successfully', async () => {
-      mockApiClient.mockResolvedValueOnce({ data: mockVods });
+      mockApiClient.mockResolvedValueOnce(mockVods);
 
       const { result } = renderHook(() => useRecentVods(), {
         wrapper: createWrapper(),
@@ -108,7 +108,7 @@ describe('useRecentVods', () => {
     });
 
     it('should apply custom limit option', async () => {
-      mockApiClient.mockResolvedValueOnce({ data: mockVods.slice(0, 3) });
+      mockApiClient.mockResolvedValueOnce(mockVods.slice(0, 3));
 
       const { result } = renderHook(() => useRecentVods({ limit: 3 }), {
         wrapper: createWrapper(),
@@ -126,7 +126,7 @@ describe('useRecentVods', () => {
 
   describe('Empty list handling', () => {
     it('should handle empty VOD list', async () => {
-      mockApiClient.mockResolvedValueOnce({ data: [] });
+      mockApiClient.mockResolvedValueOnce([]);
 
       const { result } = renderHook(() => useRecentVods(), {
         wrapper: createWrapper(),
@@ -141,7 +141,7 @@ describe('useRecentVods', () => {
     });
 
     it('should return empty array as default', async () => {
-      mockApiClient.mockResolvedValueOnce({ data: null });
+      mockApiClient.mockResolvedValueOnce(null);
 
       const { result } = renderHook(() => useRecentVods(), {
         wrapper: createWrapper(),
@@ -160,7 +160,7 @@ describe('useRecentVods', () => {
       mockApiClient.mockImplementation(
         () =>
           new Promise((resolve) => {
-            setTimeout(() => resolve({ data: mockVods }), 100);
+            setTimeout(() => resolve(mockVods), 100);
           })
       );
 
@@ -213,7 +213,7 @@ describe('useRecentVods', () => {
 
   describe('Caching', () => {
     it('should cache data and not refetch on re-render', async () => {
-      mockApiClient.mockResolvedValue({ data: mockVods });
+      mockApiClient.mockResolvedValue(mockVods);
 
       const { result, rerender } = renderHook(() => useRecentVods(), {
         wrapper: SharedCacheWrapper,
@@ -236,7 +236,7 @@ describe('useRecentVods', () => {
 
   describe('Mutate', () => {
     it('should provide mutate function to manually refresh', async () => {
-      mockApiClient.mockResolvedValue({ data: mockVods });
+      mockApiClient.mockResolvedValue(mockVods);
 
       const { result } = renderHook(() => useRecentVods(), {
         wrapper: createWrapper(),
@@ -262,7 +262,7 @@ describe('useRecentVods', () => {
 
   describe('Status filtering', () => {
     it('should only fetch meetings with processing or ended status', async () => {
-      mockApiClient.mockResolvedValueOnce({ data: mockVods });
+      mockApiClient.mockResolvedValueOnce(mockVods);
 
       renderHook(() => useRecentVods(), {
         wrapper: createWrapper(),

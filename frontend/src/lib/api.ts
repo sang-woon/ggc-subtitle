@@ -55,7 +55,9 @@ export async function apiClient<T>(
 
     try {
       const errorData = await response.json();
-      if (errorData.message) {
+      if (errorData.detail) {
+        errorMessage = errorData.detail;
+      } else if (errorData.message) {
         errorMessage = errorData.message;
       }
     } catch {

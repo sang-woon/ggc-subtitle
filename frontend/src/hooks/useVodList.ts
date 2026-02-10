@@ -25,19 +25,11 @@ export interface UseVodListResult {
   mutate: () => void;
 }
 
-interface VodListResponse {
-  data: MeetingType[];
-  total: number;
-  page: number;
-  per_page: number;
-  has_next: boolean;
-}
-
 /**
  * SWR fetcher for VOD list
  */
-async function fetcher(endpoint: string): Promise<VodListResponse> {
-  return apiClient<VodListResponse>(endpoint);
+async function fetcher(endpoint: string): Promise<MeetingType[]> {
+  return apiClient<MeetingType[]>(endpoint);
 }
 
 /**
@@ -54,7 +46,7 @@ export function useVodList(options?: UseVodListOptions): UseVodListResult {
 
   const endpoint = `/api/meetings?status=processing,ended&page=${page}&per_page=${perPage}`;
 
-  const { data, error, isLoading, mutate } = useSWR<VodListResponse>(
+  const { data, error, isLoading, mutate } = useSWR<MeetingType[]>(
     endpoint,
     fetcher,
     {
@@ -65,19 +57,15 @@ export function useVodList(options?: UseVodListOptions): UseVodListResult {
     }
   );
 
-  const total = data?.total ?? 0;
-  const responsePerPage = data?.per_page ?? perPage;
-  const totalPages = responsePerPage > 0 ? Math.ceil(total / responsePerPage) : 0;
-
   return {
-    vods: data?.data ?? [],
+    vods: data ?? [],
     isLoading,
     error: error ?? null,
-    total,
-    page: data?.page ?? page,
-    perPage: responsePerPage,
-    hasNext: data?.has_next ?? false,
-    totalPages,
+    total: data?.length ?? 0,
+    page,
+    perPage,
+    hasNext: (data?.length ?? 0) >= perPage,
+    totalPages: 0,
     mutate: () => {
       mutate();
     },

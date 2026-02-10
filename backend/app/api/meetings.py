@@ -11,8 +11,12 @@ from supabase import Client
 
 from app.core.channels import get_all_channels, get_channel
 from app.core.database import get_supabase
-from app.schemas.meeting import MeetingCreate, MeetingStatus
-from app.services.kms_vod_resolver import is_kms_vod_url, resolve_kms_vod_url
+from app.schemas.meeting import MeetingCreate, MeetingFromUrl, MeetingStatus
+from app.services.kms_vod_resolver import (
+    is_kms_vod_url,
+    resolve_kms_vod_url,
+    resolve_kms_vod_metadata,
+)
 
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -168,6 +172,51 @@ async def get_meeting_by_id(
         )
 
     return meeting
+
+
+@router.post("/from-url", status_code=status.HTTP_201_CREATED)
+async def create_meeting_from_url(
+    data: MeetingFromUrl,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """URL만으로 VOD를 등록합니다. KMS URL이면 메타데이터를 자동 추출합니다."""
+    # 1. 메타데이터 추출
+    try:
+        metadata = await resolve_kms_vod_metadata(data.url)
+    except (ValueError, Exception) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"URL 변환 실패: {e}",
+        )
+
+    # 2. 중복 체크 (vod_url 기준)
+    try:
+        result = (
+            supabase.table("meetings")
+            .select("id")
+            .eq("vod_url", metadata["vod_url"])
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 등록된 VOD입니다.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # 테이블 없으면 중복 체크 스킵
+
+    # 3. meeting 생성
+    meeting_data = MeetingCreate(
+        title=metadata["title"],
+        meeting_date=date.fromisoformat(metadata["meeting_date"]),
+        vod_url=metadata["vod_url"],
+        status=MeetingStatus.ENDED,
+        duration_seconds=metadata["duration_seconds"],
+    )
+    return create_meeting_service(supabase, meeting_data)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

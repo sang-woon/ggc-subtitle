@@ -24,15 +24,11 @@ export interface UseRecentVodsOptions {
   limit?: number;
 }
 
-interface VodsResponse {
-  data: MeetingType[] | null;
-}
-
 /**
  * SWR fetcher 함수
  */
-async function fetcher(endpoint: string): Promise<VodsResponse> {
-  return apiClient<VodsResponse>(endpoint);
+async function fetcher(endpoint: string): Promise<MeetingType[]> {
+  return apiClient<MeetingType[]>(endpoint);
 }
 
 /**
@@ -60,7 +56,7 @@ export function useRecentVods(options?: UseRecentVodsOptions): UseRecentVodsResu
   const limit = options?.limit ?? DEFAULT_LIMIT;
   const endpoint = `/api/meetings?status=processing,ended&limit=${limit}`;
 
-  const { data, error, isLoading, mutate } = useSWR<VodsResponse>(
+  const { data, error, isLoading, mutate } = useSWR<MeetingType[]>(
     endpoint,
     fetcher,
     {
@@ -72,7 +68,7 @@ export function useRecentVods(options?: UseRecentVodsOptions): UseRecentVodsResu
   );
 
   return {
-    vods: data?.data ?? [],
+    vods: data ?? [],
     isLoading,
     error: error ?? null,
     mutate: () => {

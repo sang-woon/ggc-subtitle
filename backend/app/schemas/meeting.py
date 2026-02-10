@@ -36,6 +36,12 @@ class MeetingCreate(MeetingBase):
     pass
 
 
+class MeetingFromUrl(BaseModel):
+    """URL만으로 VOD 등록 요청 스키마"""
+
+    url: str = Field(..., description="KMS VOD URL 또는 MP4 URL")
+
+
 class MeetingUpdate(BaseModel):
     """회의 수정 요청 스키마"""
 
