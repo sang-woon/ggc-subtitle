@@ -8,7 +8,6 @@ pydantic-settings>=2.7.0
 
 # 데이터베이스
 sqlalchemy>=2.0.30
-asyncpg>=0.30.0
 psycopg>=3.2.0
 psycopg-binary>=3.2.0
 
@@ -21,6 +20,9 @@ aiohttp>=3.11.0
 
 # Deepgram STT (Nova-3)
 deepgram-sdk>=3.0.0
+
+# 한국어 형태소 분석 (띄어쓰기 교정)
+kiwipiepy>=0.18.0
 
 # 개발 도구
 python-dotenv>=1.0.1

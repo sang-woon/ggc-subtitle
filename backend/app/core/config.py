@@ -18,14 +18,21 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_key: str = ""
 
+    # OpenAI Whisper
+    openai_api_key: str = ""
+
     # Deepgram STT (Nova-3)
     deepgram_api_key: str = ""
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003"]
+    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origin_regex: str = r"https://.*\.vercel\.app"
+
+    # STT 자동 시작 (방송중 채널 감지 시 자동 STT)
+    stt_auto_start: bool = True
 
     # 서버
-    debug: bool = True
+    debug: bool = False
 
 
 settings = Settings()
