@@ -5,6 +5,7 @@ import { highlightText as highlightTextUtil } from '../utils/highlight';
 export interface SubtitleItemProps {
   startTime: number;
   text: string;
+  speaker?: string | null;
   isCurrent?: boolean;
   highlightQuery?: string;
   onClick?: (startTime: number) => void;
@@ -47,6 +48,7 @@ function renderHighlightedText(text: string, query?: string): React.ReactNode {
 export default function SubtitleItem({
   startTime,
   text,
+  speaker,
   isCurrent = false,
   highlightQuery,
   onClick,
@@ -64,8 +66,15 @@ export default function SubtitleItem({
       onClick={handleClick}
       className={`${baseStyles} ${currentStyles}`.trim()}
     >
-      <span className="block font-mono text-xs text-gray-500 mb-1">
-        {formatTime(startTime)}
+      <span className="flex items-center gap-2 mb-1">
+        <span className="font-mono text-xs text-gray-500">
+          {formatTime(startTime)}
+        </span>
+        {speaker && (
+          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+            {speaker}
+          </span>
+        )}
       </span>
       <span className="block text-sm text-gray-900 leading-relaxed">
         {renderHighlightedText(text, highlightQuery)}

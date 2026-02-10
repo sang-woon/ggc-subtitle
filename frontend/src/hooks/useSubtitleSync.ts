@@ -137,7 +137,8 @@ export function useSubtitleSync(
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [videoRef, videoRef.current]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoRef]);
 
   return {
     currentSubtitle,

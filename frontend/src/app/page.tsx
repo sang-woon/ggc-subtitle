@@ -4,8 +4,10 @@ import { useState } from 'react';
 
 import Link from 'next/link';
 
-import { Header, LiveMeetingCard, RecentVodList } from '@/components';
+import { Header, LiveMeetingCard, RecentVodList, VodRegisterModal } from '@/components';
 import { useLiveMeeting, useRecentVods } from '@/hooks';
+import { apiClient } from '@/lib/api';
+import type { VodRegisterFormType, MeetingType } from '@/types';
 
 export default function Home() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -16,7 +18,23 @@ export default function Home() {
 
   const handleRegisterClick = () => {
     setIsRegisterModalOpen(true);
-    // TODO: Implement modal opening logic
+  };
+
+  const handleRegisterSubmit = async (data: VodRegisterFormType) => {
+    try {
+      await apiClient<MeetingType>('/api/meetings', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: data.title,
+          meeting_date: data.meeting_date,
+          vod_url: data.vod_url,
+          status: 'ended',
+        }),
+      });
+      setIsRegisterModalOpen(false);
+    } catch {
+      alert('VOD 등록에 실패했습니다.');
+    }
   };
 
   return (
@@ -64,6 +82,12 @@ export default function Home() {
           {/* Action Buttons */}
           <div className="flex gap-4">
             <Link
+              href="/live"
+              className="flex-1 px-4 py-3 bg-primary text-white rounded-md font-medium text-center hover:bg-primary-light active:bg-primary-dark transition-colors"
+            >
+              채널 선택
+            </Link>
+            <Link
               href="/vod"
               className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-center hover:bg-gray-50 transition-colors"
             >
@@ -71,7 +95,7 @@ export default function Home() {
             </Link>
             <button
               onClick={handleRegisterClick}
-              className="flex-1 px-4 py-3 bg-primary text-white rounded-md font-medium hover:bg-primary-light active:bg-primary-dark transition-colors"
+              className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors"
             >
               VOD 등록
             </button>
@@ -79,21 +103,11 @@ export default function Home() {
         </div>
       </main>
 
-      {/* TODO: VOD Register Modal */}
-      {isRegisterModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">VOD 등록</h2>
-            <p className="text-gray-500 mb-4">VOD 등록 기능은 준비 중입니다.</p>
-            <button
-              onClick={() => setIsRegisterModalOpen(false)}
-              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 transition-colors"
-            >
-              닫기
-            </button>
-          </div>
-        </div>
-      )}
+      <VodRegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSubmit={handleRegisterSubmit}
+      />
     </div>
   );
 }

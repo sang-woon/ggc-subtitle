@@ -1,124 +1,128 @@
-"""Meetings API 라우터"""
+"""Meetings API 라우터 (Supabase REST)
 
+meetings 테이블이 없으면 channels 정적 데이터로 폴백합니다.
+"""
+
+from datetime import date
 from typing import Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from supabase import Client
 
-from app.core.database import get_db
-from app.models.meeting import Meeting
-from app.schemas.meeting import (
-    MeetingCreate,
-    MeetingResponse,
-    MeetingStatus,
-)
+from app.core.channels import get_all_channels, get_channel
+from app.core.database import get_supabase
+from app.schemas.meeting import MeetingCreate, MeetingStatus
+from app.services.kms_vod_resolver import is_kms_vod_url, resolve_kms_vod_url
 
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
 
+def _channel_to_meeting(ch: dict, meeting_status: str = "live") -> dict:
+    """채널 정보를 meeting 형식으로 변환합니다."""
+    return {
+        "id": ch["id"],
+        "title": ch["name"],
+        "meeting_date": date.today().isoformat(),
+        "stream_url": ch["stream_url"],
+        "vod_url": None,
+        "status": meeting_status,
+        "duration_seconds": None,
+        "created_at": None,
+        "updated_at": None,
+    }
+
+
 # =============================================================================
-# Service Functions
+# Service Functions (Supabase REST + 채널 폴백)
 # =============================================================================
 
 
-async def get_meetings_service(
-    db: AsyncSession,
-    status: Optional[MeetingStatus] = None,
+def get_meetings_service(
+    supabase: Client,
+    statuses: Optional[list[MeetingStatus]] = None,
     limit: int = 10,
     offset: int = 0,
 ) -> list[dict]:
-    """회의 목록을 조회합니다.
-
-    Args:
-        db: 데이터베이스 세션
-        status: 필터링할 상태
-        limit: 조회할 개수
-        offset: 시작 위치
-
-    Returns:
-        회의 목록
-    """
-    query = select(Meeting)
-
-    if status:
-        query = query.where(Meeting.status == status.value)
-
-    query = query.order_by(Meeting.meeting_date.desc())
-    query = query.limit(limit).offset(offset)
-
-    result = await db.execute(query)
-    meetings = result.scalars().all()
-
-    return [
-        MeetingResponse.model_validate(meeting).model_dump(mode="json")
-        for meeting in meetings
-    ]
+    """회의 목록을 조회합니다. meetings 테이블 없으면 채널 데이터 반환."""
+    try:
+        query = supabase.table("meetings").select("*")
+        if statuses:
+            status_values = [s.value for s in statuses]
+            query = query.in_("status", status_values)
+        query = query.order("meeting_date", desc=True)
+        query = query.range(offset, offset + limit - 1)
+        result = query.execute()
+        return result.data
+    except Exception:
+        # meetings 테이블이 없으면 채널 데이터로 폴백
+        channels = get_all_channels()
+        meetings = [_channel_to_meeting(ch) for ch in channels]
+        if statuses:
+            status_values = [s.value for s in statuses]
+            meetings = [m for m in meetings if m["status"] in status_values]
+        return meetings[offset:offset + limit]
 
 
-async def get_live_meeting_service(db: AsyncSession) -> Optional[dict]:
-    """실시간 회의를 조회합니다.
+def get_live_meeting_service(
+    supabase: Client,
+    channel: Optional[str] = None,
+) -> Optional[dict]:
+    """실시간 회의를 조회합니다. channel 파라미터로 채널 데이터 직접 반환."""
+    if channel:
+        ch = get_channel(channel)
+        if ch:
+            return _channel_to_meeting(ch)
+        return None
 
-    Args:
-        db: 데이터베이스 세션
-
-    Returns:
-        실시간 회의 정보 또는 None
-    """
-    query = select(Meeting).where(Meeting.status == MeetingStatus.LIVE.value)
-    result = await db.execute(query)
-    meeting = result.scalar_one_or_none()
-
-    if meeting:
-        return MeetingResponse.model_validate(meeting).model_dump(mode="json")
-    return None
-
-
-async def get_meeting_by_id_service(db: AsyncSession, meeting_id: UUID) -> Optional[dict]:
-    """회의 ID로 회의를 조회합니다.
-
-    Args:
-        db: 데이터베이스 세션
-        meeting_id: 회의 ID
-
-    Returns:
-        회의 정보 또는 None
-    """
-    query = select(Meeting).where(Meeting.id == meeting_id)
-    result = await db.execute(query)
-    meeting = result.scalar_one_or_none()
-
-    if meeting:
-        return MeetingResponse.model_validate(meeting).model_dump(mode="json")
-    return None
+    try:
+        result = (
+            supabase.table("meetings")
+            .select("*")
+            .eq("status", "live")
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception:
+        return None
 
 
-async def create_meeting_service(db: AsyncSession, meeting_data: MeetingCreate) -> dict:
-    """새 회의를 생성합니다.
+def get_meeting_by_id_service(
+    supabase: Client,
+    meeting_id: str,
+) -> Optional[dict]:
+    """회의 ID로 회의를 조회합니다."""
+    # 먼저 채널 ID인지 확인
+    ch = get_channel(meeting_id)
+    if ch:
+        return _channel_to_meeting(ch)
 
-    Args:
-        db: 데이터베이스 세션
-        meeting_data: 회의 생성 데이터
+    try:
+        result = (
+            supabase.table("meetings")
+            .select("*")
+            .eq("id", meeting_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception:
+        return None
 
-    Returns:
-        생성된 회의 정보
-    """
-    meeting = Meeting(
-        title=meeting_data.title,
-        meeting_date=meeting_data.meeting_date,
-        stream_url=meeting_data.stream_url,
-        vod_url=meeting_data.vod_url,
-        status=meeting_data.status.value,
-        duration_seconds=meeting_data.duration_seconds,
-    )
 
-    db.add(meeting)
-    await db.flush()
-    await db.refresh(meeting)
-
-    return MeetingResponse.model_validate(meeting).model_dump(mode="json")
+def create_meeting_service(supabase: Client, meeting_data: MeetingCreate) -> dict:
+    """새 회의를 생성합니다."""
+    data = {
+        "title": meeting_data.title,
+        "meeting_date": meeting_data.meeting_date.isoformat(),
+        "stream_url": meeting_data.stream_url,
+        "vod_url": meeting_data.vod_url,
+        "status": meeting_data.status.value,
+        "duration_seconds": meeting_data.duration_seconds,
+    }
+    result = supabase.table("meetings").insert(data).execute()
+    return result.data[0]
 
 
 # =============================================================================
@@ -126,57 +130,36 @@ async def create_meeting_service(db: AsyncSession, meeting_data: MeetingCreate) 
 # =============================================================================
 
 
-@router.get("", response_model=list[MeetingResponse])
+@router.get("")
 async def get_meetings(
-    status: Optional[MeetingStatus] = Query(None, description="회의 상태 필터"),
+    status: Optional[str] = Query(None, description="회의 상태 필터 (콤마구분 가능: processing,ended)"),
     limit: int = Query(10, ge=1, le=100, description="조회할 개수"),
     offset: int = Query(0, ge=0, description="시작 위치"),
-    db: AsyncSession = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> list[dict]:
-    """회의 목록을 조회합니다.
-
-    Args:
-        status: 필터링할 상태 (선택)
-        limit: 조회할 개수 (기본 10, 최대 100)
-        offset: 시작 위치 (기본 0)
-        db: 데이터베이스 세션
-
-    Returns:
-        회의 목록
-    """
-    return await get_meetings_service(db, status=status, limit=limit, offset=offset)
+    """회의 목록을 조회합니다."""
+    statuses = None
+    if status:
+        statuses = [MeetingStatus(s.strip()) for s in status.split(",")]
+    return get_meetings_service(supabase, statuses=statuses, limit=limit, offset=offset)
 
 
-@router.get("/live", response_model=Optional[MeetingResponse])
+@router.get("/live")
 async def get_live_meeting(
-    db: AsyncSession = Depends(get_db),
+    channel: Optional[str] = Query(None, description="채널 ID (예: ch14)"),
+    supabase: Client = Depends(get_supabase),
 ) -> Optional[dict]:
-    """현재 실시간 회의를 조회합니다.
-
-    Returns:
-        실시간 회의 정보 또는 null
-    """
-    return await get_live_meeting_service(db)
+    """현재 실시간 회의를 조회합니다. 채널로 필터 가능."""
+    return get_live_meeting_service(supabase, channel=channel)
 
 
-@router.get("/{meeting_id}", response_model=MeetingResponse)
+@router.get("/{meeting_id}")
 async def get_meeting_by_id(
-    meeting_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
 ) -> dict:
-    """회의 ID로 회의를 조회합니다.
-
-    Args:
-        meeting_id: 회의 UUID
-        db: 데이터베이스 세션
-
-    Returns:
-        회의 정보
-
-    Raises:
-        HTTPException: 회의를 찾을 수 없는 경우 404
-    """
-    meeting = await get_meeting_by_id_service(db, meeting_id)
+    """회의 ID로 회의를 조회합니다."""
+    meeting = get_meeting_by_id_service(supabase, meeting_id)
 
     if meeting is None:
         raise HTTPException(
@@ -187,18 +170,18 @@ async def get_meeting_by_id(
     return meeting
 
 
-@router.post("", response_model=MeetingResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_meeting(
     meeting_data: MeetingCreate,
-    db: AsyncSession = Depends(get_db),
+    supabase: Client = Depends(get_supabase),
 ) -> dict:
-    """새 회의(VOD)를 등록합니다.
-
-    Args:
-        meeting_data: 회의 생성 데이터
-        db: 데이터베이스 세션
-
-    Returns:
-        생성된 회의 정보
-    """
-    return await create_meeting_service(db, meeting_data)
+    """새 회의(VOD)를 등록합니다. KMS VOD URL은 자동으로 MP4 URL로 변환됩니다."""
+    if meeting_data.vod_url and is_kms_vod_url(meeting_data.vod_url):
+        try:
+            meeting_data.vod_url = await resolve_kms_vod_url(meeting_data.vod_url)
+        except (ValueError, Exception) as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"KMS VOD URL 변환 실패: {e}",
+            )
+    return create_meeting_service(supabase, meeting_data)

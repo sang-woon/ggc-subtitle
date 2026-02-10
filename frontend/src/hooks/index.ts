@@ -1,5 +1,15 @@
 // Hooks 인덱스 파일
 
+export { useChannels } from './useChannels';
+export type { UseChannelsResult } from './useChannels';
+
+export { useChannelStatus } from './useChannelStatus';
+export type {
+  UseChannelStatusOptions,
+  UseChannelStatusResult,
+  StatusChange,
+} from './useChannelStatus';
+
 export { useLiveMeeting } from './useLiveMeeting';
 export type { UseLiveMeetingResult } from './useLiveMeeting';
 

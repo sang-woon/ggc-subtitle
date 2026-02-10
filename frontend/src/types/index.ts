@@ -38,6 +38,18 @@ export interface ApiError {
   };
 }
 
+export interface ChannelType {
+  id: string;
+  name: string;
+  code: string;
+  stream_url: string;
+  livestatus?: number;     // 0=방송전, 1=방송중, 2=정회중, 3=종료, 4=생중계없음
+  status_text?: string;    // "방송중", "방송전" 등
+  has_schedule?: boolean;  // 오늘 일정 유무
+  session_no?: number;     // 회차 (예: 388 → 제388회)
+  session_order?: number;  // 차수 (예: 1 → 제1차)
+}
+
 export interface VodRegisterFormType {
   title: string;
   meeting_date: string;

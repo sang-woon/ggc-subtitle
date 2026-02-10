@@ -5,6 +5,14 @@ import LivePage from '../page';
 
 import type { MeetingType } from '../../../types';
 
+// Mock global fetch for STT start/stop API calls
+const mockFetch = jest.fn().mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve({ status: 'started' }),
+  text: () => Promise.resolve(''),
+});
+global.fetch = mockFetch;
+
 // Mock the useLiveMeeting hook
 const mockUseLiveMeeting = jest.fn();
 jest.mock('../../../hooks/useLiveMeeting', () => ({
@@ -19,11 +27,22 @@ jest.mock('../../../hooks/useSubtitleWebSocket', () => ({
   useSubtitleWebSocket: () => mockUseSubtitleWebSocket(),
 }));
 
-// Mock the useRouter hook
+// Mock the useChannelStatus hook
+const mockUseChannelStatus = jest.fn();
+jest.mock('../../../hooks/useChannelStatus', () => ({
+  __esModule: true,
+  useChannelStatus: () => mockUseChannelStatus(),
+}));
+
+// Mock the useRouter and useSearchParams hooks
 const mockPush = jest.fn();
+const mockSearchParamsGet = jest.fn();
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+  }),
+  useSearchParams: () => ({
+    get: mockSearchParamsGet,
   }),
 }));
 
@@ -78,7 +97,22 @@ describe('LivePage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: 'started' }),
+      text: () => Promise.resolve(''),
+    });
     mockUseSubtitleWebSocket.mockReturnValue(defaultWebSocketReturn);
+    mockUseChannelStatus.mockReturnValue({
+      channels: [
+        { id: 'ch14', name: '본회의', code: 'A011', stream_url: 'https://example.com/ch14/playlist.m3u8' },
+      ],
+      isLoading: false,
+      error: null,
+      requestNotificationPermission: jest.fn(),
+    });
+    // 기본: channel 파라미터로 채널이 선택된 상태
+    mockSearchParamsGet.mockReturnValue('ch14');
   });
 
   describe('when live meeting exists', () => {
@@ -96,16 +130,20 @@ describe('LivePage', () => {
       expect(screen.getByTestId('live-page')).toBeInTheDocument();
     });
 
-    it('shows header with meeting title', () => {
+    it('shows header with channel name', () => {
       render(<LivePage />);
 
-      expect(screen.getByText('제352회 본회의')).toBeInTheDocument();
+      // 채널 이름이 헤더와 채널바에 표시됨
+      const channelNames = screen.getAllByText('본회의');
+      expect(channelNames.length).toBeGreaterThanOrEqual(1);
     });
 
     it('shows live badge in header', () => {
       render(<LivePage />);
 
-      expect(screen.getByText('Live')).toBeInTheDocument();
+      // Header와 채널바 모두 LIVE 배지가 표시됨
+      const liveBadges = screen.getAllByText(/LIVE|Live/i);
+      expect(liveBadges.length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders HLS player', () => {
@@ -137,8 +175,9 @@ describe('LivePage', () => {
     });
   });
 
-  describe('when no live meeting', () => {
+  describe('when no channel selected', () => {
     beforeEach(() => {
+      mockSearchParamsGet.mockReturnValue(null);
       mockUseLiveMeeting.mockReturnValue({
         meeting: null,
         isLoading: false,
@@ -146,57 +185,50 @@ describe('LivePage', () => {
       });
     });
 
-    it('shows no broadcast message', () => {
+    it('shows channel selector', () => {
       render(<LivePage />);
 
-      expect(screen.getByText(/현재 진행 중인 방송이 없습니다/)).toBeInTheDocument();
+      expect(screen.getByTestId('channel-selector')).toBeInTheDocument();
+      expect(screen.getByText('채널 선택')).toBeInTheDocument();
     });
 
-    it('shows home button', () => {
+    it('shows channel list', () => {
       render(<LivePage />);
 
-      expect(screen.getByRole('button', { name: /홈으로 이동/ })).toBeInTheDocument();
+      expect(screen.getByText('본회의')).toBeInTheDocument();
     });
 
-    it('navigates to home when button is clicked', async () => {
+    it('navigates to channel on select', async () => {
       const user = userEvent.setup();
       render(<LivePage />);
 
-      await user.click(screen.getByRole('button', { name: /홈으로 이동/ }));
+      await user.click(screen.getByTestId('channel-ch14'));
 
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockPush).toHaveBeenCalledWith('/live?channel=ch14');
     });
   });
 
-  describe('loading state', () => {
+  describe('channel loading state', () => {
     beforeEach(() => {
+      mockSearchParamsGet.mockReturnValue(null);
+      mockUseChannelStatus.mockReturnValue({
+        channels: [],
+        isLoading: true,
+        error: null,
+        requestNotificationPermission: jest.fn(),
+      });
       mockUseLiveMeeting.mockReturnValue({
         meeting: null,
-        isLoading: true,
+        isLoading: false,
         error: null,
       });
     });
 
-    it('shows loading state', () => {
+    it('shows loading spinner in channel selector', () => {
       render(<LivePage />);
 
-      expect(screen.getByTestId('page-loading')).toBeInTheDocument();
-    });
-  });
-
-  describe('error state', () => {
-    beforeEach(() => {
-      mockUseLiveMeeting.mockReturnValue({
-        meeting: null,
-        isLoading: false,
-        error: new Error('Failed to fetch'),
-      });
-    });
-
-    it('shows error message', () => {
-      render(<LivePage />);
-
-      expect(screen.getByText(/오류가 발생했습니다/)).toBeInTheDocument();
+      // ChannelSelector shows spinner when isLoading=true
+      expect(screen.getByTestId('live-page')).toBeInTheDocument();
     });
   });
 

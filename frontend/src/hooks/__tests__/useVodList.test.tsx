@@ -1,7 +1,9 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { SWRConfig } from 'swr';
 import React from 'react';
 
+import { renderHook, waitFor } from '@testing-library/react';
+import { SWRConfig } from 'swr';
+
+import { apiClient } from '@/lib/api';
 import type { MeetingType } from '@/types';
 
 import { useVodList } from '../useVodList';
@@ -10,8 +12,6 @@ import { useVodList } from '../useVodList';
 jest.mock('@/lib/api', () => ({
   apiClient: jest.fn(),
 }));
-
-import { apiClient } from '@/lib/api';
 
 const mockedApiClient = apiClient as jest.MockedFunction<typeof apiClient>;
 

@@ -2,6 +2,9 @@
 export { default as Badge } from './Badge';
 export type { BadgeProps, BadgeVariant } from './Badge';
 
+export { default as ChannelSelector } from './ChannelSelector';
+export type { ChannelSelectorProps } from './ChannelSelector';
+
 export { default as Header } from './Header';
 export type { HeaderProps } from './Header';
 
@@ -25,6 +28,9 @@ export type { HlsPlayerProps } from './HlsPlayer';
 export { default as SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 
+export { default as SubtitleOverlay } from './SubtitleOverlay';
+export type { SubtitleOverlayProps } from './SubtitleOverlay';
+
 export { default as SubtitlePanel } from './SubtitlePanel';
 export type { SubtitlePanelProps } from './SubtitlePanel';
 
@@ -34,6 +40,8 @@ export type { Mp4PlayerProps } from './Mp4Player';
 
 export { default as VideoControls } from './VideoControls';
 export type { VideoControlsProps } from './VideoControls';
+
+export { default as VodRegisterModal } from './VodRegisterModal';
 
 export { default as VodTable } from './VodTable';
 export type { VodTableProps } from './VodTable';

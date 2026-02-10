@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-import { VodRegisterFormType } from '../types';
+import type { VodRegisterFormType } from '../types';
 
 interface VodRegisterModalProps {
   isOpen: boolean;

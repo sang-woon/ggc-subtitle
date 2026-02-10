@@ -2,6 +2,7 @@
  * useLiveMeeting 훅
  *
  * 실시간 회의 정보를 가져오고 5초마다 폴링합니다.
+ * channelId를 전달하면 해당 채널의 실시간 회의만 조회합니다.
  */
 
 'use client';
@@ -20,9 +21,6 @@ export interface UseLiveMeetingResult {
   mutate: () => void;
 }
 
-/**
- * SWR fetcher 함수
- */
 async function fetcher(endpoint: string): Promise<MeetingType | null> {
   return apiClient<MeetingType | null>(endpoint);
 }
@@ -30,22 +28,15 @@ async function fetcher(endpoint: string): Promise<MeetingType | null> {
 /**
  * 실시간 회의 정보를 가져오는 훅
  *
- * @returns 실시간 회의 데이터, 로딩 상태, 에러, mutate 함수
- *
- * @example
- * ```tsx
- * const { meeting, isLoading, error } = useLiveMeeting();
- *
- * if (isLoading) return <div>로딩 중...</div>;
- * if (error) return <div>에러 발생</div>;
- * if (!meeting) return <div>진행 중인 회의가 없습니다</div>;
- *
- * return <div>{meeting.title}</div>;
- * ```
+ * @param channelId - 채널 ID (예: 'ch14'). 없으면 전체 조회.
  */
-export function useLiveMeeting(): UseLiveMeetingResult {
+export function useLiveMeeting(channelId?: string): UseLiveMeetingResult {
+  const endpoint = channelId
+    ? `/api/meetings/live?channel=${channelId}`
+    : '/api/meetings/live';
+
   const { data, error, isLoading, mutate } = useSWR<MeetingType | null>(
-    '/api/meetings/live',
+    endpoint,
     fetcher,
     {
       refreshInterval: POLLING_INTERVAL,

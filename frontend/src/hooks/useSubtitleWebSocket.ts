@@ -32,6 +32,8 @@ export interface UseSubtitleWebSocketOptions {
   onSubtitle?: (subtitle: SubtitleType) => void;
   /** 자동 연결 여부 (기본값: true) */
   autoConnect?: boolean;
+  /** 실시간 자막 표시 지연(ms) - 영상과 싱크 맞추기용 (기본값: 0) */
+  displayDelay?: number;
 }
 
 /**
@@ -48,6 +50,8 @@ export interface UseSubtitleWebSocketReturn {
   disconnect: () => void;
   /** 자막 배열 초기화 함수 */
   clearSubtitles: () => void;
+  /** STT interim (preview) 텍스트 - 확정 전 미리보기 */
+  interimText: string;
 }
 
 /**
@@ -57,6 +61,13 @@ interface SubtitleCreatedEvent {
   type: 'subtitle_created';
   payload: {
     subtitle: SubtitleType;
+  };
+}
+
+interface SubtitleHistoryEvent {
+  type: 'subtitle_history';
+  payload: {
+    subtitles: SubtitleType[];
   };
 }
 
@@ -76,6 +87,7 @@ const RECONNECT_CONFIG = {
 
 /**
  * WebSocket URL 생성
+ * meeting UUID와 channel ID 모두 동일 경로 사용
  */
 function getWebSocketUrl(meetingId: string): string {
   const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
@@ -104,10 +116,11 @@ function getWebSocketUrl(meetingId: string): string {
 export function useSubtitleWebSocket(
   options: UseSubtitleWebSocketOptions
 ): UseSubtitleWebSocketReturn {
-  const { meetingId, onSubtitle, autoConnect = true } = options;
+  const { meetingId, onSubtitle, autoConnect = true, displayDelay = 0 } = options;
 
   // State
   const [subtitles, setSubtitles] = useState<SubtitleType[]>([]);
+  const [interimText, setInterimText] = useState<string>('');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     autoConnect ? 'connecting' : 'disconnected'
   );
@@ -117,9 +130,9 @@ export function useSubtitleWebSocket(
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isManualDisconnectRef = useRef(false);
-  const isReplacingConnectionRef = useRef(false);
   const isMountedRef = useRef(true);
   const onSubtitleRef = useRef(onSubtitle);
+  const delayTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Update onSubtitle ref when it changes
   useEffect(() => {
@@ -154,11 +167,11 @@ export function useSubtitleWebSocket(
   const createConnection = useCallback(() => {
     if (!isMountedRef.current) return;
 
-    // 기존 연결 정리 (onclose 핸들러가 재연결하지 않도록 플래그 설정)
+    // 기존 연결 정리 (wsRef를 먼저 null로 설정하여 close 이벤트에서 재연결 방지)
     if (wsRef.current) {
-      isReplacingConnectionRef.current = true;
-      wsRef.current.close();
-      isReplacingConnectionRef.current = false;
+      const oldWs = wsRef.current;
+      wsRef.current = null;
+      oldWs.close();
     }
 
     clearReconnectTimeout();
@@ -180,17 +193,37 @@ export function useSubtitleWebSocket(
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
 
-        if (message.type === 'subtitle_created') {
+        if (message.type === 'subtitle_history') {
+          // 접속 시 서버에서 보내주는 이전 자막 히스토리 (일괄 수신, 지연 없음)
+          const historyEvent = message as SubtitleHistoryEvent;
+          const historySubtitles = historyEvent.payload.subtitles;
+          setSubtitles(historySubtitles);
+        } else if (message.type === 'subtitle_interim') {
+          // STT interim (미확정) 텍스트 - 즉시 표시 (displayDelay 미적용)
+          const interim = message.payload as { text: string };
+          setInterimText(interim.text);
+        } else if (message.type === 'subtitle_created') {
+          // 실시간 자막 수신
           const subtitleEvent = message as SubtitleCreatedEvent;
           const newSubtitle = subtitleEvent.payload.subtitle;
 
-          setSubtitles((prev) => [...prev, newSubtitle]);
+          const addSubtitle = () => {
+            if (!isMountedRef.current) return;
+            setSubtitles((prev) => [...prev, newSubtitle]);
+            setInterimText(''); // 확정 자막 도착 시 interim 클리어
+            if (onSubtitleRef.current) {
+              onSubtitleRef.current(newSubtitle);
+            }
+          };
 
-          if (onSubtitleRef.current) {
-            onSubtitleRef.current(newSubtitle);
+          // displayDelay > 0이면 영상과 싱크를 맞추기 위해 지연 표시
+          if (displayDelay > 0) {
+            const timer = setTimeout(addSubtitle, displayDelay);
+            delayTimersRef.current.push(timer);
+          } else {
+            addSubtitle();
           }
         }
-        // 다른 이벤트 타입은 무시 (예: meeting_status_changed)
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
       }
@@ -204,8 +237,8 @@ export function useSubtitleWebSocket(
     ws.onclose = (event: CloseEvent) => {
       if (!isMountedRef.current) return;
 
-      // 연결 교체 중이면 무시 (새 연결 생성 시 기존 연결 정리)
-      if (isReplacingConnectionRef.current) return;
+      // 이미 교체된 연결의 close 이벤트이면 무시
+      if (wsRef.current !== ws) return;
 
       // 수동 해제가 아니고 비정상 종료인 경우 재연결 시도
       if (!isManualDisconnectRef.current && !event.wasClean) {
@@ -222,7 +255,7 @@ export function useSubtitleWebSocket(
         setConnectionStatus('disconnected');
       }
     };
-  }, [meetingId, clearReconnectTimeout, getReconnectDelay]);
+  }, [meetingId, displayDelay, clearReconnectTimeout, getReconnectDelay]);
 
   /**
    * 수동 연결
@@ -233,11 +266,20 @@ export function useSubtitleWebSocket(
   }, [createConnection]);
 
   /**
+   * 대기 중인 지연 타이머 모두 정리
+   */
+  const clearDelayTimers = useCallback(() => {
+    delayTimersRef.current.forEach(clearTimeout);
+    delayTimersRef.current = [];
+  }, []);
+
+  /**
    * 수동 해제
    */
   const disconnect = useCallback(() => {
     isManualDisconnectRef.current = true;
     clearReconnectTimeout();
+    clearDelayTimers();
 
     if (wsRef.current) {
       wsRef.current.close();
@@ -245,7 +287,7 @@ export function useSubtitleWebSocket(
     }
 
     setConnectionStatus('disconnected');
-  }, [clearReconnectTimeout]);
+  }, [clearReconnectTimeout, clearDelayTimers]);
 
   /**
    * 자막 배열 초기화
@@ -261,6 +303,7 @@ export function useSubtitleWebSocket(
 
     // meetingId 변경 시 자막 초기화
     setSubtitles([]);
+    setInterimText('');
 
     if (autoConnect) {
       createConnection();
@@ -269,16 +312,18 @@ export function useSubtitleWebSocket(
     return () => {
       isMountedRef.current = false;
       clearReconnectTimeout();
+      clearDelayTimers();
 
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
       }
     };
-  }, [meetingId, autoConnect, createConnection, clearReconnectTimeout]);
+  }, [meetingId, autoConnect, createConnection, clearReconnectTimeout, clearDelayTimers]);
 
   return {
     subtitles,
+    interimText,
     connectionStatus,
     connect,
     disconnect,

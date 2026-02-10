@@ -11,7 +11,7 @@ export interface HlsPlayerProps {
   onReady?: () => void;
 }
 
-export default function HlsPlayer({ streamUrl, videoRef, onError, onReady }: HlsPlayerProps) {
+const HlsPlayer = React.memo(function HlsPlayer({ streamUrl, videoRef, onError, onReady }: HlsPlayerProps) {
   const internalRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +37,30 @@ export default function HlsPlayer({ streamUrl, videoRef, onError, onReady }: Hls
     }
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls({
+        // 라이브 스트리밍 버퍼 최적화
+        liveSyncDurationCount: 3,        // 라이브 엣지에서 3세그먼트 뒤에서 재생
+        liveMaxLatencyDurationCount: 10,  // 최대 10세그먼트 지연 허용 (넉넉하게)
+        liveDurationInfinity: true,       // 라이브 스트림 무한 재생
+        maxBufferLength: 30,              // 최대 30초 버퍼
+        maxMaxBufferLength: 120,          // 버퍼 상한 120초 (넉넉하게)
+        maxBufferSize: 100 * 1000 * 1000, // 100MB 버퍼
+        maxBufferHole: 0.5,               // 0.5초 버퍼 홀 허용
+        highBufferWatchdogPeriod: 2,      // 버퍼 워치독 2초
+        // 네트워크 안정성
+        manifestLoadingMaxRetry: 10,
+        manifestLoadingRetryDelay: 1000,
+        levelLoadingMaxRetry: 10,
+        levelLoadingRetryDelay: 1000,
+        fragLoadingMaxRetry: 10,
+        fragLoadingRetryDelay: 1000,
+        // 낮은 지연 모드 비활성화 (안정성 우선)
+        lowLatencyMode: false,
+        // 빠른 시작
+        startLevel: -1,
+        // backBuffer 유지 (되감기 가능)
+        backBufferLength: 30,
+      });
       hlsRef.current = hls;
 
       hls.attachMedia(videoElement);
@@ -45,14 +68,43 @@ export default function HlsPlayer({ streamUrl, videoRef, onError, onReady }: Hls
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsLoading(false);
+        // 라이브 스트림 자동 재생
+        videoElement.play().catch(() => {
+          // autoplay 정책에 의해 차단될 수 있음 — muted로 재시도
+          videoElement.muted = true;
+          videoElement.play().catch(() => {});
+        });
         onReady?.();
+      });
+
+      // 라이브 엣지에서 너무 밀리면 자동 복구
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        if (!videoElement.paused && hls.liveSyncPosition) {
+          const drift = hls.liveSyncPosition - videoElement.currentTime;
+          // 20초 이상 밀렸으면 라이브 엣지로 점프
+          if (drift > 20) {
+            videoElement.currentTime = hls.liveSyncPosition - 3;
+          }
+        }
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          setHasError(true);
-          setIsLoading(false);
-          onError?.(new Error(`HLS Error: ${data.type}`));
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.warn('HLS network error, recovering...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn('HLS media error, recovering...');
+              hls.recoverMediaError();
+              break;
+            default:
+              setHasError(true);
+              setIsLoading(false);
+              onError?.(new Error(`HLS Error: ${data.type}`));
+              break;
+          }
         }
       });
     } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
@@ -87,6 +139,8 @@ export default function HlsPlayer({ streamUrl, videoRef, onError, onReady }: Hls
         ref={internalRef}
         data-testid="hls-video"
         controls
+        autoPlay
+        playsInline
         className="w-full h-full"
         onLoadedData={handleLoadedData}
         onError={handleError}
@@ -122,4 +176,6 @@ export default function HlsPlayer({ streamUrl, videoRef, onError, onReady }: Hls
       )}
     </div>
   );
-}
+});
+
+export default HlsPlayer;

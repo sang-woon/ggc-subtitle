@@ -104,6 +104,7 @@ class DeepgramService:
         max_retries: int = 0,
         apply_dictionary: bool = False,
         language: str = DEFAULT_LANGUAGE,
+        content_type: str = "audio/wav",
     ) -> TranscriptionResult:
         """오디오 청크를 텍스트로 변환
 
@@ -113,6 +114,7 @@ class DeepgramService:
             max_retries: 최대 재시도 횟수 (rate limit 시)
             apply_dictionary: 사전 후처리 적용 여부
             language: 언어 코드 (기본값: ko)
+            content_type: 오디오 Content-Type (기본값: audio/wav, TS는 application/octet-stream)
 
         Returns:
             TranscriptionResult: 변환 결과
@@ -141,6 +143,7 @@ class DeepgramService:
                     keywords=keywords,
                     smart_format=True,
                     punctuate=True,
+                    content_type=content_type,
                 )
 
                 # 사전 후처리
@@ -188,6 +191,7 @@ class DeepgramService:
         keywords: list[str] | None = None,
         smart_format: bool = True,
         punctuate: bool = True,
+        content_type: str = "audio/wav",
     ) -> TranscriptionResult:
         """Deepgram API 호출
 
@@ -197,6 +201,7 @@ class DeepgramService:
             keywords: 인식 정확도 향상을 위한 키워드
             smart_format: 스마트 포맷팅 (숫자, 날짜 등)
             punctuate: 구두점 자동 추가
+            content_type: 오디오 Content-Type (기본값: audio/wav)
 
         Returns:
             TranscriptionResult: 변환 결과
@@ -222,7 +227,7 @@ class DeepgramService:
 
         headers = {
             "Authorization": f"Token {self._api_key}",
-            "Content-Type": "audio/wav",
+            "Content-Type": content_type,
         }
 
         try:

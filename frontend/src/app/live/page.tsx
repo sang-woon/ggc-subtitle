@@ -1,19 +1,24 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import Badge from '../../components/Badge';
+import ChannelSelector from '../../components/ChannelSelector';
 import Header from '../../components/Header';
 import HlsPlayer from '../../components/HlsPlayer';
 import SearchInput from '../../components/SearchInput';
+import SubtitleOverlay from '../../components/SubtitleOverlay';
 import SubtitlePanel from '../../components/SubtitlePanel';
+import { useChannelStatus } from '../../hooks/useChannelStatus';
 import useLiveMeeting from '../../hooks/useLiveMeeting';
 import { useSubtitleSearch } from '../../hooks/useSubtitleSearch';
 import { useSubtitleWebSocket } from '../../hooks/useSubtitleWebSocket';
+import { API_BASE_URL } from '../../lib/api';
 
 import type { ConnectionStatus } from '../../hooks/useSubtitleWebSocket';
+import type { ChannelType } from '../../types';
 
 /**
  * 연결 상태에 따른 배지 설정
@@ -36,119 +41,210 @@ function getConnectionStatusBadge(status: ConnectionStatus): {
   }
 }
 
-export default function LivePage() {
+function LivePageContent() {
   const router = useRouter();
-  const { meeting, isLoading, error } = useLiveMeeting();
+  const searchParams = useSearchParams();
+  const channelParam = searchParams.get('channel');
+
+  const [selectedChannel, setSelectedChannel] = useState<ChannelType | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, _setCurrentTime] = useState<number | undefined>(undefined);
 
+  // 채널 목록 (방송 상태 포함)
+  const {
+    channels,
+    isLoading: isChannelsLoading,
+    requestNotificationPermission,
+  } = useChannelStatus();
+
+  // 활성 채널 ID (URL 파라미터 또는 선택된 채널)
+  const activeChannelId = channelParam || selectedChannel?.id;
+
+  // 실시간 회의 데이터
+  const { meeting } = useLiveMeeting(activeChannelId || undefined);
+
+  // 활성 채널의 stream URL (meeting이 없어도 채널에서 직접 가져옴)
+  const activeStreamUrl = meeting?.stream_url
+    || selectedChannel?.stream_url
+    || channels.find(c => c.id === channelParam)?.stream_url
+    || '';
+
+  // 활성 채널 이름
+  const activeChannelName = selectedChannel?.name
+    || channels.find(c => c.id === channelParam)?.name
+    || '';
+
   // WebSocket을 통한 실시간 자막 수신
+  // meeting ID가 있으면 사용, 없으면 채널 ID로 직접 연결
+  const wsRoomId = meeting?.id || activeChannelId || '';
   const {
     subtitles,
+    interimText,
     connectionStatus,
     connect,
-    // disconnect is available but not used in current UI
   } = useSubtitleWebSocket({
-    meetingId: meeting?.id || '',
-    autoConnect: !!meeting, // meeting이 있을 때만 자동 연결
+    meetingId: wsRoomId,
+    autoConnect: !!activeChannelId,
+    displayDelay: 1500, // HLS 영상 버퍼 지연에 맞춰 자막 표시를 1.5초 지연
   });
 
-  // 자막 검색 기능 - 검색어로 필터링 또는 전체 표시
+  // 자막 검색 기능
   const {
     filteredSubtitles,
     matchCount,
     currentMatchIndex,
-    // currentMatch can be used for auto-scrolling to matched subtitle
     goToNextMatch,
     goToPrevMatch,
   } = useSubtitleSearch({
     subtitles,
     query: searchQuery,
-    filterMode: 'all', // 전체 자막 표시하면서 하이라이트
+    filterMode: 'all',
   });
+
+  // STT 상태 (UI 표시용)
+  const [sttStatus, setSttStatus] = useState<'idle' | 'starting' | 'running' | 'error'>('idle');
+
+  // 채널 선택 시 STT 시작 보장
+  // NOTE: cleanup에서 stop을 호출하지 않음.
+  // STT 수명주기는 서버의 AutoSttManager가 방송 상태에 따라 자동 관리함.
+  // 클라이언트가 stop을 호출하면 다른 모든 시청자의 자막도 끊김.
+  useEffect(() => {
+    if (!activeChannelId) {
+      setSttStatus('idle');
+      return;
+    }
+
+    let cancelled = false;
+    const channelId = activeChannelId;
+
+    async function ensureSttStarted() {
+      setSttStatus('starting');
+
+      const maxRetries = 3;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        if (cancelled) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/channels/${channelId}/stt/start`,
+            { method: 'POST' }
+          );
+
+          if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            console.error(
+              `[STT] start failed for ${channelId}: HTTP ${response.status} - ${body}`
+            );
+            if (attempt < maxRetries) {
+              await new Promise((r) => setTimeout(r, 1000 * attempt));
+              continue;
+            }
+            if (!cancelled) setSttStatus('error');
+            return;
+          }
+
+          const data = await response.json().catch(() => ({}));
+          console.log(`[STT] ${channelId}: ${data.status ?? 'started'}`);
+          if (!cancelled) setSttStatus('running');
+          return;
+        } catch (err) {
+          console.error(
+            `[STT] start error for ${channelId} (attempt ${attempt}/${maxRetries}):`,
+            err
+          );
+          if (attempt < maxRetries) {
+            await new Promise((r) => setTimeout(r, 1000 * attempt));
+          } else {
+            if (!cancelled) setSttStatus('error');
+          }
+        }
+      }
+    }
+
+    ensureSttStarted();
+
+    return () => {
+      cancelled = true;
+      setSttStatus('idle');
+      // STT stop은 호출하지 않음 - 서버의 AutoSttManager가 방송 종료 시 자동 중지
+    };
+  }, [activeChannelId]);
+
+  const handleHlsError = useCallback((err: Error) => {
+    console.error('HLS Error:', err);
+  }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
-  const handleSubtitleClick = (startTime: number) => {
+  const handleSubtitleClick = useCallback((startTime: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = startTime;
       videoRef.current.play();
     }
+  }, []);
+
+  const handleChannelSelect = (channel: ChannelType) => {
+    setSelectedChannel(channel);
+    router.push(`/live?channel=${channel.id}`);
+    // 첫 채널 선택 시 알림 권한 요청
+    requestNotificationPermission();
   };
 
-  const handleHomeClick = () => {
-    router.push('/');
+  const handleBackToChannels = () => {
+    setSelectedChannel(null);
+    router.push('/live');
   };
 
-  // Loading state
-  if (isLoading) {
+  // 채널 미선택 상태 → ChannelSelector 표시
+  if (!activeChannelId) {
     return (
-      <div data-testid="page-loading" className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div data-testid="page-error" className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">오류가 발생했습니다.</p>
-          <button
-            onClick={handleHomeClick}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-light transition-colors"
-          >
-            홈으로 이동
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // No live meeting
-  if (!meeting) {
-    return (
-      <div data-testid="live-page" className="min-h-screen flex flex-col">
+      <div data-testid="live-page" className="min-h-screen flex flex-col bg-gray-50">
         <Header title="실시간 방송" showLiveBadge={false} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <svg
-              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            </svg>
-            <p className="text-gray-600 mb-4">현재 진행 중인 방송이 없습니다.</p>
-            <button
-              onClick={handleHomeClick}
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-light transition-colors"
-            >
-              홈으로 이동
-            </button>
-          </div>
-        </div>
+        <ChannelSelector
+          channels={channels}
+          isLoading={isChannelsLoading}
+          onSelect={handleChannelSelect}
+        />
       </div>
     );
   }
 
+  // 채널 선택됨 → 플레이어 표시
   const connectionBadge = getConnectionStatusBadge(connectionStatus);
 
   return (
     <div data-testid="live-page" className="min-h-screen flex flex-col bg-gray-50">
-      <Header title={meeting.title} showSearch showLiveBadge>
+      <Header title={activeChannelName || '실시간 방송'} showSearch showLiveBadge>
         <SearchInput onSearch={handleSearch} placeholder="자막 검색..." />
       </Header>
+
+      {/* 채널 변경 바 */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3">
+        <button
+          onClick={handleBackToChannels}
+          className="text-sm text-primary hover:text-primary-light flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          채널 목록
+        </button>
+        <span className="text-sm text-gray-400">|</span>
+        <span className="text-sm font-medium text-gray-700">{activeChannelName}</span>
+        <Badge variant="live">LIVE</Badge>
+        {sttStatus === 'starting' && (
+          <Badge variant="warning">STT 시작 중...</Badge>
+        )}
+        {sttStatus === 'running' && (
+          <Badge variant="success">STT 활성</Badge>
+        )}
+        {sttStatus === 'error' && (
+          <Badge variant="warning">STT 오류</Badge>
+        )}
+      </div>
 
       <main
         data-testid="live-layout"
@@ -159,11 +255,21 @@ export default function LivePage() {
           data-testid="main-content"
           className="w-full lg:w-[70%]"
         >
-          <HlsPlayer
-            streamUrl={meeting.stream_url || ''}
-            videoRef={videoRef}
-            onError={(err) => console.error('HLS Error:', err)}
-          />
+          <div className="relative">
+            {activeStreamUrl ? (
+              <HlsPlayer
+                streamUrl={activeStreamUrl}
+                videoRef={videoRef}
+                onError={handleHlsError}
+              />
+            ) : (
+              <div className="bg-black rounded-lg aspect-video flex items-center justify-center">
+                <p className="text-gray-400">스트림 URL을 불러오는 중...</p>
+              </div>
+            )}
+            {/* 영상 위 자막 오버레이 (최신 2줄) */}
+            <SubtitleOverlay subtitles={subtitles} interimText={interimText} />
+          </div>
         </div>
 
         {/* Sidebar - Subtitle Panel (30% on desktop) */}
@@ -179,16 +285,7 @@ export default function LivePage() {
             <span className="text-sm text-gray-600">자막 연결 상태</span>
             <div className="flex items-center gap-2">
               <Badge variant={connectionBadge.variant}>{connectionBadge.text}</Badge>
-              {connectionStatus === 'disconnected' && (
-                <button
-                  onClick={connect}
-                  className="text-xs text-primary hover:text-primary-light transition-colors"
-                  data-testid="reconnect-button"
-                >
-                  재연결
-                </button>
-              )}
-              {connectionStatus === 'error' && (
+              {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
                 <button
                   onClick={connect}
                   className="text-xs text-primary hover:text-primary-light transition-colors"
@@ -200,7 +297,7 @@ export default function LivePage() {
             </div>
           </div>
 
-          {/* Search Navigation (visible when searching) */}
+          {/* Search Navigation */}
           {searchQuery && matchCount > 0 && (
             <div
               data-testid="search-navigation"
@@ -234,7 +331,6 @@ export default function LivePage() {
             </div>
           )}
 
-          {/* No results message */}
           {searchQuery && matchCount === 0 && (
             <div
               data-testid="no-search-results"
@@ -256,5 +352,17 @@ export default function LivePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function LivePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    }>
+      <LivePageContent />
+    </Suspense>
   );
 }

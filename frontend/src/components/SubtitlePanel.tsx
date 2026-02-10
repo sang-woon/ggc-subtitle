@@ -14,7 +14,7 @@ export interface SubtitlePanelProps {
   onSubtitleClick?: (startTime: number) => void;
 }
 
-export default function SubtitlePanel({
+const SubtitlePanel = React.memo(function SubtitlePanel({
   subtitles,
   searchQuery,
   currentTime,
@@ -24,12 +24,11 @@ export default function SubtitlePanel({
   const listRef = useRef<HTMLDivElement>(null);
   const prevSubtitleCountRef = useRef(subtitles.length);
 
-  // Auto-scroll when new subtitles are added
+  // Auto-scroll to top when new subtitles are added (최신 자막이 맨 위)
   useEffect(() => {
     if (autoScroll && subtitles.length > prevSubtitleCountRef.current) {
-      const lastItem = listRef.current?.lastElementChild;
-      if (lastItem) {
-        lastItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      if (listRef.current) {
+        listRef.current.scrollTop = 0;
       }
     }
     prevSubtitleCountRef.current = subtitles.length;
@@ -70,11 +69,12 @@ export default function SubtitlePanel({
             <p className="text-sm">자막을 불러오는 중...</p>
           </div>
         ) : (
-          subtitles.map((subtitle) => (
+          [...subtitles].reverse().map((subtitle) => (
             <SubtitleItem
               key={subtitle.id}
               startTime={subtitle.start_time}
               text={subtitle.text}
+              speaker={subtitle.speaker}
               isCurrent={currentSubtitleId === subtitle.id}
               highlightQuery={searchQuery}
               onClick={onSubtitleClick}
@@ -84,4 +84,6 @@ export default function SubtitlePanel({
       </div>
     </div>
   );
-}
+});
+
+export default SubtitlePanel;
