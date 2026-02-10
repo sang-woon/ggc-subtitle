@@ -18,6 +18,7 @@ import os
 import re
 import shutil
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -74,6 +75,8 @@ KEEPALIVE_INTERVAL = 8.0
 DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen"
 # 자동 재연결 최대 대기 (초)
 MAX_RECONNECT_DELAY = 30.0
+# STT 무응답 감지 타임아웃 (초) - 이 시간 동안 Deepgram 응답이 없으면 강제 재연결
+STALL_TIMEOUT = 60.0
 
 
 class _SentenceBuffer:
@@ -156,6 +159,7 @@ class ChannelSttService:
         self._parsers: dict[str, HlsPlaylistParser] = {}
         self._subtitle_counter: dict[str, int] = {}
         self._sentence_buffers: dict[str, _SentenceBuffer] = {}
+        self._last_receive_time: dict[str, float] = {}
 
     async def start(self, channel_id: str, stream_url: str) -> None:
         """채널 STT 처리를 시작합니다.
@@ -174,6 +178,7 @@ class ChannelSttService:
         parser = HlsPlaylistParser()
         self._parsers[channel_id] = parser
         self._subtitle_counter[channel_id] = 0
+        self._last_receive_time[channel_id] = time.monotonic()
 
         task = asyncio.create_task(
             self._run_with_reconnect(channel_id, stream_url, parser),
@@ -196,6 +201,7 @@ class ChannelSttService:
             await parser.close()
 
         self._subtitle_counter.pop(channel_id, None)
+        self._last_receive_time.pop(channel_id, None)
         buf = self._sentence_buffers.pop(channel_id, None)
         if buf:
             buf.clear()
@@ -256,7 +262,7 @@ class ChannelSttService:
             async with websockets.connect(ws_url, additional_headers=headers) as dg_ws:
                 logger.info("Channel %s: Deepgram WebSocket connected", channel_id)
 
-                # 3개의 동시 태스크 실행
+                # 4개의 동시 태스크 실행 (watchdog 포함)
                 sender_task = asyncio.create_task(
                     self._send_segments(channel_id, stream_url, parser, http_client, dg_ws)
                 )
@@ -266,10 +272,13 @@ class ChannelSttService:
                 keepalive_task = asyncio.create_task(
                     self._send_keepalive(dg_ws)
                 )
+                watchdog_task = asyncio.create_task(
+                    self._watchdog(channel_id, dg_ws)
+                )
 
                 # 하나라도 끝나면 나머지도 정리
                 done, pending = await asyncio.wait(
-                    [sender_task, receiver_task, keepalive_task],
+                    [sender_task, receiver_task, keepalive_task, watchdog_task],
                     return_when=asyncio.FIRST_COMPLETED,
                 )
                 for t in pending:
@@ -343,6 +352,9 @@ class ChannelSttService:
 
         async for message in dg_ws:
             try:
+                # Deepgram으로부터 메시지 수신 → 활성 상태 갱신
+                self._last_receive_time[channel_id] = time.monotonic()
+
                 data = json.loads(message)
                 msg_type = data.get("type", "")
 
@@ -499,6 +511,29 @@ class ChannelSttService:
             try:
                 await dg_ws.send(json.dumps({"type": "KeepAlive"}))
             except Exception:
+                return
+
+    async def _watchdog(
+        self,
+        channel_id: str,
+        dg_ws: websockets.ClientConnection,
+    ) -> None:
+        """Deepgram 무응답 감지 워치독.
+
+        STALL_TIMEOUT 동안 Deepgram으로부터 아무 메시지도 수신하지 못하면
+        WebSocket을 강제로 닫아 자동 재연결을 트리거합니다.
+        """
+        while True:
+            await asyncio.sleep(STALL_TIMEOUT / 2)
+            last = self._last_receive_time.get(channel_id, time.monotonic())
+            elapsed = time.monotonic() - last
+            if elapsed > STALL_TIMEOUT:
+                logger.warning(
+                    "Channel %s: STT stalled (no Deepgram response for %.0fs), forcing reconnect",
+                    channel_id,
+                    elapsed,
+                )
+                await dg_ws.close()
                 return
 
 
