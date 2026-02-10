@@ -52,6 +52,8 @@ export interface UseSubtitleWebSocketReturn {
   clearSubtitles: () => void;
   /** STT interim (preview) 텍스트 - 확정 전 미리보기 */
   interimText: string;
+  /** 마지막 자막/interim 수신 시각 (timestamp ms), 수신 없으면 null */
+  lastActivityTime: number | null;
 }
 
 /**
@@ -121,6 +123,7 @@ export function useSubtitleWebSocket(
   // State
   const [subtitles, setSubtitles] = useState<SubtitleType[]>([]);
   const [interimText, setInterimText] = useState<string>('');
+  const [lastActivityTime, setLastActivityTime] = useState<number | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     autoConnect ? 'connecting' : 'disconnected'
   );
@@ -202,6 +205,7 @@ export function useSubtitleWebSocket(
           // STT interim (미확정) 텍스트 - 즉시 표시 (displayDelay 미적용)
           const interim = message.payload as { text: string };
           setInterimText(interim.text);
+          setLastActivityTime(Date.now());
         } else if (message.type === 'subtitle_created') {
           // 실시간 자막 수신
           const subtitleEvent = message as SubtitleCreatedEvent;
@@ -211,6 +215,7 @@ export function useSubtitleWebSocket(
             if (!isMountedRef.current) return;
             setSubtitles((prev) => [...prev, newSubtitle]);
             setInterimText(''); // 확정 자막 도착 시 interim 클리어
+            setLastActivityTime(Date.now());
             if (onSubtitleRef.current) {
               onSubtitleRef.current(newSubtitle);
             }
@@ -304,6 +309,7 @@ export function useSubtitleWebSocket(
     // meetingId 변경 시 자막 초기화
     setSubtitles([]);
     setInterimText('');
+    setLastActivityTime(null);
 
     if (autoConnect) {
       createConnection();
@@ -324,6 +330,7 @@ export function useSubtitleWebSocket(
   return {
     subtitles,
     interimText,
+    lastActivityTime,
     connectionStatus,
     connect,
     disconnect,

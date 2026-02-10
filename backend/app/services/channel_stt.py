@@ -67,8 +67,8 @@ def _create_kiwi() -> Kiwi:
 # 한국어 띄어쓰기 교정을 위한 Kiwi 싱글톤 인스턴스
 _kiwi: Kiwi | None = _create_kiwi()
 
-# m3u8 폴링 간격 (초)
-POLL_INTERVAL = 5.0
+# m3u8 폴링 간격 (초) - 낮을수록 자막 지연 감소 (최소 HLS 세그먼트 주기 이상 권장)
+POLL_INTERVAL = 2.0
 # Deepgram KeepAlive 간격 (초)
 KEEPALIVE_INTERVAL = 8.0
 # Deepgram WebSocket URL
@@ -129,8 +129,8 @@ class _SentenceBuffer:
             return True
         if last_char in ("요", "다"):
             return True
-        # 너무 긴 경우 (60자 초과 시 빠르게 플러시)
-        if len(text) > 60:
+        # 너무 긴 경우 (40자 초과 시 빠르게 플러시)
+        if len(text) > 40:
             return True
         return False
 
@@ -141,6 +141,63 @@ class _SentenceBuffer:
         self.end_time = 0.0
         self.conf_sum = 0.0
         self.conf_count = 0
+
+
+def _group_words_by_speaker(words: list[dict]) -> list[dict]:
+    """words 배열을 화자 경계에서 분할하여 그룹별로 반환합니다.
+
+    연속된 같은 화자의 단어를 하나의 그룹으로 묶고,
+    화자가 바뀌는 지점에서 새 그룹을 시작합니다.
+
+    Returns:
+        list of dicts with keys: speaker, text, confidence, start, end
+    """
+    if not words:
+        return []
+
+    groups: list[dict] = []
+    current_speaker = words[0].get("speaker")
+    current_words: list[str] = []
+    conf_sum = 0.0
+    conf_count = 0
+    start = words[0].get("start", 0.0)
+    end = words[0].get("end", 0.0)
+
+    for w in words:
+        sp = w.get("speaker")
+        word_text = w.get("punctuated_word", w.get("word", ""))
+
+        if sp != current_speaker and current_words:
+            # 화자가 바뀌면 현재 그룹을 확정하고 새 그룹 시작
+            groups.append({
+                "speaker": current_speaker,
+                "text": " ".join(current_words),
+                "confidence": conf_sum / conf_count if conf_count else 0.0,
+                "start": start,
+                "end": end,
+            })
+            current_words = []
+            conf_sum = 0.0
+            conf_count = 0
+            current_speaker = sp
+            start = w.get("start", 0.0)
+
+        current_words.append(word_text)
+        conf_sum += w.get("confidence", 0.0)
+        conf_count += 1
+        end = w.get("end", 0.0)
+
+    # 마지막 그룹
+    if current_words:
+        groups.append({
+            "speaker": current_speaker,
+            "text": " ".join(current_words),
+            "confidence": conf_sum / conf_count if conf_count else 0.0,
+            "start": start,
+            "end": end,
+        })
+
+    return groups
 
 
 class ChannelSttService:
@@ -252,7 +309,7 @@ class ChannelSttService:
             f"&punctuate=true"
             f"&interim_results=true"
             f"&vad_events=true"
-            f"&endpointing=500"
+            f"&endpointing=300"
             f"&diarize=true"
         )
         headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
@@ -392,56 +449,56 @@ class ChannelSttService:
                     continue
 
                 alt = alternatives[0]
-                confidence = alt.get("confidence", 0.0)
 
-                # words 배열에서 띄어쓰기가 포함된 텍스트 재구성
+                # words 배열에서 화자 경계별로 분할하여 처리
                 words = alt.get("words", [])
                 if words:
-                    transcript = " ".join(
-                        w.get("punctuated_word", w.get("word", ""))
-                        for w in words
-                    )
-                    # 화자 추출 (가장 많은 단어를 말한 화자)
-                    speakers = [
-                        w.get("speaker")
-                        for w in words
-                        if w.get("speaker") is not None
-                    ]
-                    if speakers:
-                        speaker = max(set(speakers), key=speakers.count)
-                    else:
-                        speaker = None
+                    speaker_groups = _group_words_by_speaker(words)
                 else:
+                    # words가 없는 경우 폴백
                     transcript = alt.get("transcript", "").strip()
-                    speaker = None
+                    if not transcript:
+                        continue
+                    start_time = data.get("start", 0.0)
+                    duration = data.get("duration", 5.0)
+                    speaker_groups = [{
+                        "speaker": None,
+                        "text": transcript,
+                        "confidence": alt.get("confidence", 0.0),
+                        "start": start_time,
+                        "end": start_time + duration,
+                    }]
 
-                if not transcript:
-                    continue
+                for group in speaker_groups:
+                    transcript = group["text"]
+                    speaker = group["speaker"]
+                    confidence = group["confidence"]
+                    start_time = group["start"]
+                    end_time = group["end"]
 
-                start_time = data.get("start", 0.0)
-                duration = data.get("duration", 5.0)
-                end_time = start_time + duration
+                    if not transcript:
+                        continue
 
-                logger.debug(
-                    "Channel %s: fragment '%s' (%.2f) speaker=%s",
-                    channel_id, transcript[:60], confidence, speaker,
-                )
+                    logger.debug(
+                        "Channel %s: fragment '%s' (%.2f) speaker=%s",
+                        channel_id, transcript[:60], confidence, speaker,
+                    )
 
-                # 화자 변경 시 기존 버퍼 플러시
-                if (
-                    buffer.parts
-                    and speaker is not None
-                    and buffer.speaker is not None
-                    and speaker != buffer.speaker
-                ):
-                    await self._emit_subtitle(channel_id, buffer)
-                    buffer.clear()
+                    # 화자 변경 시 기존 버퍼 즉시 플러시
+                    if (
+                        buffer.parts
+                        and speaker is not None
+                        and buffer.speaker is not None
+                        and speaker != buffer.speaker
+                    ):
+                        await self._emit_subtitle(channel_id, buffer)
+                        buffer.clear()
 
-                buffer.add(transcript, speaker, confidence, start_time, end_time)
+                    buffer.add(transcript, speaker, confidence, start_time, end_time)
 
-                if buffer.should_flush():
-                    await self._emit_subtitle(channel_id, buffer)
-                    buffer.clear()
+                    if buffer.should_flush():
+                        await self._emit_subtitle(channel_id, buffer)
+                        buffer.clear()
 
             except json.JSONDecodeError:
                 logger.warning("Channel %s: invalid JSON from Deepgram", channel_id)

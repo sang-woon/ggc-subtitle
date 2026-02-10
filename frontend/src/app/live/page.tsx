@@ -21,6 +21,81 @@ import type { ConnectionStatus } from '../../hooks/useSubtitleWebSocket';
 import type { ChannelType } from '../../types';
 
 /**
+ * STT 활동 상태 인디케이터
+ * - 음성 인식 중: 초록 펄스 + "음성 인식 중"
+ * - 대기 중: 회색 + "N초 전 마지막 수신"
+ * - 수신 없음: 회색 + "음성 대기 중"
+ */
+function SttActivityIndicator({
+  interimText,
+  lastActivityTime,
+}: {
+  interimText: string;
+  lastActivityTime: number | null;
+}) {
+  const [elapsed, setElapsed] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!lastActivityTime) {
+      setElapsed(null);
+      return;
+    }
+    setElapsed(Math.floor((Date.now() - lastActivityTime) / 1000));
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - lastActivityTime) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lastActivityTime]);
+
+  // 음성 인식 중 (interim 텍스트가 있음)
+  if (interimText) {
+    return (
+      <div className="flex items-center gap-2 text-xs" data-testid="stt-activity">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+        </span>
+        <span className="text-green-600 font-medium">음성 인식 중</span>
+      </div>
+    );
+  }
+
+  // 최근 활동 있음 (10초 이내)
+  if (elapsed !== null && elapsed < 10) {
+    return (
+      <div className="flex items-center gap-2 text-xs" data-testid="stt-activity">
+        <span className="relative flex h-2 w-2">
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+        </span>
+        <span className="text-green-600">{elapsed}초 전 수신</span>
+      </div>
+    );
+  }
+
+  // 활동 있지만 시간이 좀 지남 (10초~60초)
+  if (elapsed !== null && elapsed < 60) {
+    return (
+      <div className="flex items-center gap-2 text-xs" data-testid="stt-activity">
+        <span className="relative flex h-2 w-2">
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-400" />
+        </span>
+        <span className="text-yellow-600">{elapsed}초 전 수신</span>
+      </div>
+    );
+  }
+
+  // 활동 없거나 오래됨
+  return (
+    <div className="flex items-center gap-2 text-xs" data-testid="stt-activity">
+      <span className="relative flex h-2 w-2">
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-300" />
+      </span>
+      <span className="text-gray-400">음성 대기 중</span>
+    </div>
+  );
+}
+
+/**
  * 연결 상태에 따른 배지 설정
  */
 function getConnectionStatusBadge(status: ConnectionStatus): {
@@ -86,6 +161,7 @@ function LivePageContent() {
   const {
     subtitles,
     interimText,
+    lastActivityTime,
     connectionStatus,
     connect,
   } = useSubtitleWebSocket({
@@ -300,24 +376,30 @@ function LivePageContent() {
           data-testid="sidebar"
           className="w-full lg:w-[30%] h-[50vh] lg:h-auto flex flex-col"
         >
-          {/* Connection Status */}
+          {/* Connection & STT Activity Status */}
           <div
             data-testid="connection-status"
-            className="flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-t-lg"
+            className="px-4 py-2 bg-white border border-gray-200 rounded-t-lg space-y-1"
           >
-            <span className="text-sm text-gray-600">자막 연결 상태</span>
-            <div className="flex items-center gap-2">
-              <Badge variant={connectionBadge.variant}>{connectionBadge.text}</Badge>
-              {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
-                <button
-                  onClick={connect}
-                  className="text-xs text-primary hover:text-primary-light transition-colors"
-                  data-testid="reconnect-button"
-                >
-                  재연결
-                </button>
-              )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">자막 연결 상태</span>
+              <div className="flex items-center gap-2">
+                <Badge variant={connectionBadge.variant}>{connectionBadge.text}</Badge>
+                {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
+                  <button
+                    onClick={connect}
+                    className="text-xs text-primary hover:text-primary-light transition-colors"
+                    data-testid="reconnect-button"
+                  >
+                    재연결
+                  </button>
+                )}
+              </div>
             </div>
+            {/* STT Activity Indicator */}
+            {connectionStatus === 'connected' && (
+              <SttActivityIndicator interimText={interimText} lastActivityTime={lastActivityTime} />
+            )}
           </div>
 
           {/* Search Navigation */}
