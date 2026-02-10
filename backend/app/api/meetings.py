@@ -38,6 +38,26 @@ def _channel_to_meeting(ch: dict, meeting_status: str = "live") -> dict:
 # =============================================================================
 
 
+def get_meetings_count(
+    supabase: Client,
+    statuses: Optional[list[MeetingStatus]] = None,
+) -> int:
+    """회의 총 개수를 조회합니다."""
+    try:
+        query = supabase.table("meetings").select("id", count="exact")
+        if statuses:
+            status_values = [s.value for s in statuses]
+            query = query.in_("status", status_values)
+        result = query.execute()
+        return result.count or 0
+    except Exception:
+        channels = get_all_channels()
+        if statuses:
+            status_values = [s.value for s in statuses]
+            return len([ch for ch in channels if "live" in status_values])
+        return len(channels)
+
+
 def get_meetings_service(
     supabase: Client,
     statuses: Optional[list[MeetingStatus]] = None,
@@ -135,13 +155,32 @@ async def get_meetings(
     status: Optional[str] = Query(None, description="회의 상태 필터 (콤마구분 가능: processing,ended)"),
     limit: int = Query(10, ge=1, le=100, description="조회할 개수"),
     offset: int = Query(0, ge=0, description="시작 위치"),
+    page: Optional[int] = Query(None, ge=1, description="페이지 번호 (1부터 시작)"),
+    per_page: Optional[int] = Query(None, ge=1, le=100, description="페이지당 개수"),
     supabase: Client = Depends(get_supabase),
-) -> list[dict]:
-    """회의 목록을 조회합니다."""
+) -> dict:
+    """회의 목록을 조회합니다. 페이지네이션 정보를 포함합니다."""
+    # page/per_page가 있으면 offset/limit으로 변환
+    actual_limit = per_page or limit
+    actual_offset = ((page - 1) * actual_limit) if page else offset
+
     statuses = None
     if status:
         statuses = [MeetingStatus(s.strip()) for s in status.split(",")]
-    return get_meetings_service(supabase, statuses=statuses, limit=limit, offset=offset)
+
+    items = get_meetings_service(supabase, statuses=statuses, limit=actual_limit, offset=actual_offset)
+    total = get_meetings_count(supabase, statuses=statuses)
+
+    actual_page = page or (actual_offset // actual_limit + 1)
+    has_next = (actual_offset + actual_limit) < total
+
+    return {
+        "data": items,
+        "total": total,
+        "page": actual_page,
+        "per_page": actual_limit,
+        "has_next": has_next,
+    }
 
 
 @router.get("/live")
@@ -168,6 +207,73 @@ async def get_meeting_by_id(
         )
 
     return meeting
+
+
+@router.get("/notes")
+async def get_meeting_notes(
+    limit: int = Query(20, ge=1, le=100, description="조회할 개수"),
+    offset: int = Query(0, ge=0, description="시작 위치"),
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의록 목록을 자막 수와 함께 조회합니다."""
+    try:
+        # 총 개수
+        count_result = (
+            supabase.table("meetings")
+            .select("id", count="exact")
+            .execute()
+        )
+        total = count_result.count or 0
+
+        # 회의 목록 (최신순)
+        result = (
+            supabase.table("meetings")
+            .select("*")
+            .order("meeting_date", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        # 각 회의의 자막 수 조회
+        notes = []
+        for meeting in result.data:
+            subtitle_count = 0
+            try:
+                sc_result = (
+                    supabase.table("subtitles")
+                    .select("id", count="exact")
+                    .eq("meeting_id", meeting["id"])
+                    .execute()
+                )
+                subtitle_count = sc_result.count or 0
+            except Exception:
+                pass
+
+            notes.append({
+                **meeting,
+                "subtitle_count": subtitle_count,
+            })
+
+        return {
+            "items": notes,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+    except Exception:
+        # meetings 테이블이 없으면 채널 데이터로 폴백
+        channels = get_all_channels()
+        notes = []
+        for ch in channels:
+            m = _channel_to_meeting(ch)
+            m["subtitle_count"] = 0
+            notes.append(m)
+        return {
+            "items": notes[offset:offset + limit],
+            "total": len(channels),
+            "limit": limit,
+            "offset": offset,
+        }
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

@@ -44,6 +44,7 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => ({
     get: mockSearchParamsGet,
   }),
+  usePathname: () => '/',
 }));
 
 // Mock HLS.js

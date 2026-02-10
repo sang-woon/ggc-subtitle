@@ -11,6 +11,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  usePathname: () => '/',
 }));
 
 // Mock the apiClient

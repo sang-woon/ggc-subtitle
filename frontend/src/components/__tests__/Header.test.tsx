@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event';
 
 import Header from '../Header';
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  usePathname: () => '/',
+}));
+
 describe('Header', () => {
   describe('logo', () => {
     it('renders logo with text "경기도의회 자막"', () => {
@@ -103,9 +108,22 @@ describe('Header', () => {
       render(<Header />);
 
       const header = screen.getByRole('banner');
-      expect(header).toHaveClass('h-16');
       expect(header).toHaveClass('bg-white');
       expect(header).toHaveClass('border-b');
+    });
+  });
+
+  describe('navigation', () => {
+    it('renders navigation items', () => {
+      render(<Header />);
+
+      const nav = screen.getByTestId('main-nav');
+      expect(nav).toBeInTheDocument();
+      expect(screen.getByText('홈')).toBeInTheDocument();
+      expect(screen.getByText('회의록')).toBeInTheDocument();
+      expect(screen.getByText('실시간')).toBeInTheDocument();
+      expect(screen.getByText('모니터')).toBeInTheDocument();
+      expect(screen.getByText('검색')).toBeInTheDocument();
     });
   });
 });

@@ -48,3 +48,10 @@ export type { VodTableProps } from './VodTable';
 
 export { default as Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
+
+// Meeting Notes Components
+export { default as MeetingNoteCard } from './MeetingNoteCard';
+export type { MeetingNoteCardProps } from './MeetingNoteCard';
+
+export { default as TranscriptView } from './TranscriptView';
+export type { TranscriptViewProps } from './TranscriptView';

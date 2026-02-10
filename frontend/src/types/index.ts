@@ -55,3 +55,46 @@ export interface VodRegisterFormType {
   meeting_date: string;
   vod_url: string;
 }
+
+// 회의록 (자막 수 포함)
+export interface MeetingNoteType extends MeetingType {
+  subtitle_count: number;
+}
+
+// 통합 검색 결과 - 자막 항목
+export interface SearchSubtitleType {
+  id: string;
+  start_time: number;
+  end_time: number;
+  text: string;
+  speaker: string | null;
+  confidence: number | null;
+}
+
+// 통합 검색 결과 - 회의별 그룹
+export interface SearchGroupType {
+  meeting_id: string;
+  meeting_title: string;
+  meeting_date: string | null;
+  meeting_status: string | null;
+  vod_url: string | null;
+  subtitles: SearchSubtitleType[];
+}
+
+// 통합 검색 응답
+export interface GlobalSearchResponse {
+  items: SubtitleType[];
+  grouped: SearchGroupType[];
+  total: number;
+  limit: number;
+  offset: number;
+  query: string;
+}
+
+// 회의록 목록 응답
+export interface MeetingNotesResponse {
+  items: MeetingNoteType[];
+  total: number;
+  limit: number;
+  offset: number;
+}

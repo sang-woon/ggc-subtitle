@@ -38,3 +38,9 @@ export type {
 
 export { useVodList } from './useVodList';
 export type { UseVodListOptions, UseVodListResult } from './useVodList';
+
+export { useMeetingNotes } from './useMeetingNotes';
+export type { UseMeetingNotesOptions, UseMeetingNotesResult } from './useMeetingNotes';
+
+export { useGlobalSearch } from './useGlobalSearch';
+export type { UseGlobalSearchOptions, UseGlobalSearchResult } from './useGlobalSearch';
