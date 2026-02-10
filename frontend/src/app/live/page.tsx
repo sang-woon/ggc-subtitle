@@ -77,8 +77,8 @@ function LivePageContent() {
   // 활성 채널 이름
   const activeChannelName = activeChannel?.name || '';
 
-  // 방송 상태 (1=방송중)
-  const isOnAir = activeChannel?.livestatus === 1;
+  // 방송 상태: 채널 데이터 로드 전에는 null, 로드 후 true/false
+  const isOnAir = activeChannel == null ? null : activeChannel.livestatus === 1;
 
   // WebSocket을 통한 실시간 자막 수신
   // meeting ID가 있으면 사용, 없으면 채널 ID로 직접 연결
@@ -120,8 +120,8 @@ function LivePageContent() {
       return;
     }
 
-    // 방송 중이 아니면 STT 시작하지 않음
-    if (!isOnAir) {
+    // 명확히 방송 중이 아닐 때만 STT 스킵 (로딩 중에는 대기)
+    if (isOnAir === false) {
       setSttStatus('idle');
       return;
     }
@@ -228,7 +228,7 @@ function LivePageContent() {
 
   return (
     <div data-testid="live-page" className="min-h-screen flex flex-col bg-gray-50">
-      <Header title={activeChannelName || '실시간 방송'} showSearch showLiveBadge={isOnAir}>
+      <Header title={activeChannelName || '실시간 방송'} showSearch showLiveBadge={isOnAir === true}>
         <SearchInput onSearch={handleSearch} placeholder="자막 검색..." />
       </Header>
 
@@ -245,18 +245,18 @@ function LivePageContent() {
         </button>
         <span className="text-sm text-gray-400">|</span>
         <span className="text-sm font-medium text-gray-700">{activeChannelName}</span>
-        {isOnAir ? (
+        {isOnAir === true ? (
           <Badge variant="live">LIVE</Badge>
-        ) : (
+        ) : isOnAir === false ? (
           <Badge variant="secondary">{activeChannel?.status_text || '방송전'}</Badge>
-        )}
-        {isOnAir && sttStatus === 'starting' && (
+        ) : null}
+        {sttStatus === 'starting' && (
           <Badge variant="warning">STT 시작 중...</Badge>
         )}
-        {isOnAir && sttStatus === 'running' && (
+        {sttStatus === 'running' && (
           <Badge variant="success">STT 활성</Badge>
         )}
-        {isOnAir && sttStatus === 'error' && (
+        {sttStatus === 'error' && (
           <Badge variant="warning">STT 오류</Badge>
         )}
       </div>
@@ -271,23 +271,23 @@ function LivePageContent() {
           className="w-full lg:w-[70%]"
         >
           <div className="relative">
-            {activeStreamUrl && isOnAir ? (
-              <HlsPlayer
-                streamUrl={activeStreamUrl}
-                videoRef={videoRef}
-                onError={handleHlsError}
-              />
-            ) : isOnAir && !activeStreamUrl ? (
-              <div className="bg-black rounded-lg aspect-video flex items-center justify-center">
-                <p className="text-gray-400">스트림 URL을 불러오는 중...</p>
-              </div>
-            ) : (
+            {isOnAir === false ? (
               <div className="bg-gray-900 rounded-lg aspect-video flex flex-col items-center justify-center gap-3">
                 <svg className="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <p className="text-gray-400 text-lg">현재 방송 중이 아닙니다</p>
                 <p className="text-gray-500 text-sm">{activeChannel?.status_text || '방송전'}</p>
+              </div>
+            ) : activeStreamUrl ? (
+              <HlsPlayer
+                streamUrl={activeStreamUrl}
+                videoRef={videoRef}
+                onError={handleHlsError}
+              />
+            ) : (
+              <div className="bg-black rounded-lg aspect-video flex items-center justify-center">
+                <p className="text-gray-400">스트림 URL을 불러오는 중...</p>
               </div>
             )}
             {/* 영상 위 자막 오버레이 (최신 2줄) */}
