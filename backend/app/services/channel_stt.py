@@ -29,6 +29,7 @@ from kiwipiepy import Kiwi
 
 from app.api.websocket import manager
 from app.core.config import settings
+from app.services.dictionary import get_default_dictionary
 from app.services.hls_parser import HlsPlaylistParser
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,9 @@ def _create_kiwi() -> Kiwi:
 
 # 한국어 띄어쓰기 교정을 위한 Kiwi 싱글톤 인스턴스
 _kiwi: Kiwi | None = _create_kiwi()
+
+# 의회 용어 사전 (STT 오인식 보정)
+_dictionary = get_default_dictionary()
 
 # m3u8 폴링 간격 (초) - 낮을수록 자막 지연 감소 (최소 HLS 세그먼트 주기 이상 권장)
 POLL_INTERVAL = 2.0
@@ -301,6 +305,16 @@ class ChannelSttService:
         parser: HlsPlaylistParser,
     ) -> None:
         """Deepgram WebSocket에 연결하고 HLS 세그먼트를 스트리밍합니다."""
+        # 의회 전문용어 키워드 부스팅 (Deepgram이 더 정확히 인식하도록)
+        keywords_param = "&".join(
+            f"keywords={kw}"
+            for kw in [
+                "산회:2", "개의:2", "정회:2", "속개:2",
+                "상정:1.5", "의결:1.5", "질의:1.5", "답변:1.5",
+                "위원장:1.5", "의원:1.5", "도지사:1.5",
+                "경기도의회:2", "보건복지위원회:1.5",
+            ]
+        )
         ws_url = (
             f"{DEEPGRAM_WS_URL}"
             f"?model=nova-3"
@@ -311,6 +325,7 @@ class ChannelSttService:
             f"&vad_events=true"
             f"&endpointing=300"
             f"&diarize=true"
+            f"&{keywords_param}"
         )
         headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
         http_client = httpx.AsyncClient(timeout=30.0)
@@ -442,6 +457,8 @@ class ChannelSttService:
                                 interim_transcript = re.sub(r"\s{2,}", " ", interim_transcript).strip()
                             except Exception:
                                 pass
+                        # 의회 용어 사전 보정
+                        interim_transcript = _dictionary.correct(interim_transcript)
                         await manager.broadcast_interim_subtitle(channel_id, {
                             "text": interim_transcript,
                             "channel_id": channel_id,
@@ -534,6 +551,9 @@ class ChannelSttService:
                 spaced_text = raw_text
         else:
             spaced_text = raw_text
+
+        # 의회 용어 사전 보정 (STT 오인식 교정)
+        spaced_text = _dictionary.correct(spaced_text)
 
         subtitle_data = {
             "subtitle": {

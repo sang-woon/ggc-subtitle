@@ -113,3 +113,40 @@ class DictionaryService:
     def __len__(self) -> int:
         """사전 항목 개수"""
         return len(self._entries)
+
+
+# ── 경기도의회 기본 사전 (Deepgram 한국어 STT 오인식 보정) ──
+
+_PARLIAMENT_ENTRIES = [
+    # 의회 용어
+    DictionaryEntry("사내를 선포", "산회를 선포", "term"),
+    DictionaryEntry("사내 를 선포", "산회를 선포", "term"),
+    DictionaryEntry("사내선포", "산회 선포", "term"),
+    DictionaryEntry("사내합니다", "산회합니다", "term"),
+    DictionaryEntry("사내를", "산회를", "term"),
+    DictionaryEntry("사내 합니다", "산회합니다", "term"),
+    DictionaryEntry("개이합니다", "개의합니다", "term"),
+    DictionaryEntry("개이를 선포", "개의를 선포", "term"),
+    DictionaryEntry("정회를 선포", "정회를 선포", "term"),  # 이미 맞지만 확인용
+    DictionaryEntry("소개합니다", "속개합니다", "term"),  # 속개(재개)
+    DictionaryEntry("속계합니다", "속개합니다", "term"),
+    DictionaryEntry("상정 하겠습니다", "상정하겠습니다", "term"),
+    DictionaryEntry("의안을 상정 합니다", "의안을 상정합니다", "term"),
+    DictionaryEntry("의결 하겠습니다", "의결하겠습니다", "term"),
+    # 직위/기관
+    DictionaryEntry("위원장 님", "위원장님", "term"),
+    DictionaryEntry("의원 님", "의원님", "term"),
+    DictionaryEntry("도지사 님", "도지사님", "term"),
+    DictionaryEntry("경기 도의회", "경기도의회", "term"),
+    DictionaryEntry("경기도 의회", "경기도의회", "term"),
+    DictionaryEntry("보건 복지 위원회", "보건복지위원회", "term"),
+    # 기타 오인식
+    DictionaryEntry("질의 하겠습니다", "질의하겠습니다", "term"),
+    DictionaryEntry("답변 하겠습니다", "답변하겠습니다", "term"),
+    DictionaryEntry("출석을 부르겠습니다", "출석을 부르겠습니다", "term"),
+]
+
+
+def get_default_dictionary() -> DictionaryService:
+    """경기도의회 기본 사전이 탑재된 DictionaryService 싱글톤을 반환합니다."""
+    return DictionaryService(entries=_PARLIAMENT_ENTRIES)
