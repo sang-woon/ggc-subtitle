@@ -160,7 +160,16 @@ async def get_meetings(
     """회의 목록을 조회합니다."""
     statuses = None
     if status:
-        statuses = [MeetingStatus(s.strip()) for s in status.split(",")]
+        try:
+            status_list = []
+            for s in status.split(","):
+                status_list.append(MeetingStatus(s.strip()))
+            statuses = status_list
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid status value",
+            )
     return get_meetings_service(supabase, statuses=statuses, limit=limit, offset=offset)
 
 

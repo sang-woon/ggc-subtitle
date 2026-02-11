@@ -88,9 +88,12 @@ class TestGetSubtitles:
     def test_get_subtitles_invalid_meeting_id_returns_422(
         self, client: TestClient
     ) -> None:
-        """잘못된 형식의 meeting_id는 422 에러를 반환한다"""
+        """잘못된 형식의 meeting_id는 200을 반환하며 빈 자막 목록을 응답한다"""
         response = client.get("/api/meetings/invalid-uuid/subtitles")
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
 
 
 class TestSearchSubtitles:
@@ -156,11 +159,14 @@ class TestSearchSubtitles:
     def test_search_subtitles_invalid_meeting_id_returns_422(
         self, client: TestClient
     ) -> None:
-        """잘못된 형식의 meeting_id는 422 에러를 반환한다"""
+        """잘못된 형식의 meeting_id는 200을 반환하며 빈 자막 목록을 응답한다"""
         response = client.get(
             "/api/meetings/invalid-uuid/subtitles/search?q=test"
         )
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
 
     def test_search_subtitles_with_pagination(
         self, client: TestClient, meeting_id: uuid.UUID
