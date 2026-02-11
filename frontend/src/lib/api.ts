@@ -10,10 +10,13 @@ import type {
   BillCreateData,
   BillDetail,
   BillsResponse,
+  MeetingSummaryType,
   ParticipantType,
   PublicationType,
+  ReviewQueueResponse,
   SubtitleHistoryType,
   SubtitleType,
+  VerificationStatsType,
 } from '@/types';
 
 export const API_BASE_URL =
@@ -611,6 +614,137 @@ export async function applyGrammarCorrections(
       method: 'POST',
       body: JSON.stringify(corrections),
     }
+  );
+}
+
+// =============================================================================
+// Phase 7: Verification (대조관리)
+// =============================================================================
+
+/**
+ * 대조관리 통계 조회
+ *
+ * @param meetingId - 회의 ID
+ * @returns 검증 통계 정보
+ */
+export async function getVerificationStats(
+  meetingId: string
+): Promise<VerificationStatsType> {
+  return apiClient<VerificationStatsType>(
+    `/api/meetings/${meetingId}/subtitles/verification-stats`
+  );
+}
+
+/**
+ * 검토 대기열 조회
+ *
+ * @param meetingId - 회의 ID
+ * @param params - 필터 파라미터 (신뢰도 임계값, 페이지네이션)
+ * @returns 검토 대기 자막 목록
+ */
+export async function getReviewQueue(
+  meetingId: string,
+  params?: { confidence_threshold?: number; limit?: number; offset?: number }
+): Promise<ReviewQueueResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.confidence_threshold !== undefined)
+    searchParams.set('confidence_threshold', params.confidence_threshold.toString());
+  if (params?.limit) searchParams.set('limit', params.limit.toString());
+  if (params?.offset) searchParams.set('offset', params.offset.toString());
+  const qs = searchParams.toString();
+  return apiClient<ReviewQueueResponse>(
+    `/api/meetings/${meetingId}/subtitles/review-queue${qs ? `?${qs}` : ''}`
+  );
+}
+
+/**
+ * 단건 자막 검증 상태 변경
+ *
+ * @param meetingId - 회의 ID
+ * @param subtitleId - 자막 ID
+ * @param status - 검증 상태 ('verified' | 'flagged' | 'unverified')
+ * @returns 업데이트된 자막 객체
+ */
+export async function verifySubtitle(
+  meetingId: string,
+  subtitleId: string,
+  status: 'verified' | 'flagged' | 'unverified'
+): Promise<SubtitleType> {
+  return apiClient<SubtitleType>(
+    `/api/meetings/${meetingId}/subtitles/${subtitleId}/verify`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }
+  );
+}
+
+/**
+ * 배치 자막 검증
+ *
+ * @param meetingId - 회의 ID
+ * @param subtitleIds - 자막 ID 배열
+ * @param status - 검증 상태 (기본: 'verified')
+ * @returns 배치 검증 결과
+ */
+export async function batchVerifySubtitles(
+  meetingId: string,
+  subtitleIds: string[],
+  status: 'verified' | 'flagged' = 'verified'
+): Promise<{ updated: number; items: SubtitleType[] }> {
+  return apiClient(
+    `/api/meetings/${meetingId}/subtitles/batch-verify`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ subtitle_ids: subtitleIds, status }),
+    }
+  );
+}
+
+// =============================================================================
+// Phase 7: Meeting Summary (AI 요약)
+// =============================================================================
+
+/**
+ * 회의록 AI 요약 생성
+ *
+ * @param meetingId - 회의 ID
+ * @returns 생성된 요약 정보
+ */
+export async function generateSummary(
+  meetingId: string
+): Promise<MeetingSummaryType> {
+  return apiClient<MeetingSummaryType>(
+    `/api/meetings/${meetingId}/summary`,
+    { method: 'POST' }
+  );
+}
+
+/**
+ * 회의록 요약 조회
+ *
+ * @param meetingId - 회의 ID
+ * @returns 요약 정보
+ */
+export async function getSummary(
+  meetingId: string
+): Promise<MeetingSummaryType> {
+  return apiClient<MeetingSummaryType>(
+    `/api/meetings/${meetingId}/summary`
+  );
+}
+
+/**
+ * 회의록 요약 삭제
+ *
+ * @param meetingId - 회의 ID
+ */
+export async function deleteSummary(
+  meetingId: string
+): Promise<void> {
+  await apiClient(
+    `/api/meetings/${meetingId}/summary`,
+    { method: 'DELETE' }
   );
 }
 

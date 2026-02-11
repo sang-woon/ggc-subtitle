@@ -28,6 +28,11 @@ from app.services.kms_vod_resolver import (
     resolve_kms_vod_url,
     resolve_kms_vod_metadata,
 )
+from app.services.summary_service import (
+    delete_summary,
+    generate_meeting_summary,
+    get_summary,
+)
 from app.services.vod_stt_service import (
     VodSttService,
     get_task_by_meeting,
@@ -629,3 +634,61 @@ async def get_publications(
         .execute()
     )
     return result.data
+
+
+# =============================================================================
+# AI Summary (P7-T2.2)
+# @TASK P7-T2.2 - AI 요약 API 엔드포인트
+# @SPEC docs/planning/02-trd.md#AI-요약
+# =============================================================================
+
+
+@router.post("/{meeting_id}/summary")
+async def create_meeting_summary(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """AI 요약 생성
+
+    자막 데이터를 GPT로 분석하여 회의 요약을 생성합니다.
+    기존 요약이 있으면 덮어씁니다.
+    """
+    try:
+        summary = await generate_meeting_summary(supabase, meeting_id)
+        return {
+            "meeting_id": meeting_id,
+            "summary_text": summary.summary_text,
+            "agenda_summaries": summary.agenda_summaries,
+            "key_decisions": summary.key_decisions,
+            "action_items": summary.action_items,
+            "model_used": summary.model_used,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"요약 생성 실패: {str(e)}")
+
+
+@router.get("/{meeting_id}/summary")
+async def get_meeting_summary(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """저장된 요약 조회"""
+    result = await get_summary(supabase, meeting_id)
+    if result is None:
+        raise HTTPException(
+            status_code=404, detail="요약이 없습니다. POST로 생성하세요."
+        )
+    return result
+
+
+@router.delete("/{meeting_id}/summary", status_code=204)
+async def delete_meeting_summary(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> None:
+    """요약 삭제 (재생성용)"""
+    deleted = await delete_summary(supabase, meeting_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="삭제할 요약이 없습니다.")

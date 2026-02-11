@@ -142,3 +142,36 @@ export interface PublicationType {
   notes: string | null;
   created_at: string;
 }
+
+// Phase 7: Verification
+export interface VerificationStatsType {
+  total: number;
+  verified: number;
+  unverified: number;
+  flagged: number;
+  progress: number;  // 0.0 ~ 1.0
+}
+
+export interface ReviewQueueResponse {
+  items: SubtitleType[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// Phase 7: Meeting Summary
+export interface MeetingSummaryType {
+  id: string;
+  meeting_id: string;
+  summary_text: string;
+  agenda_summaries: Array<{
+    order_num: number;
+    title: string;
+    summary: string;
+  }>;
+  key_decisions: string[];
+  action_items: string[];
+  model_used: string;
+  created_at: string;
+  updated_at: string;
+}

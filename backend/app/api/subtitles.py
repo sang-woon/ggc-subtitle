@@ -16,6 +16,12 @@ from app.services.grammar_checker import check_grammar_batch
 from app.services.history_tracker import get_subtitle_history, record_changes_for_update
 from app.services.pii_masking import mask_pii, mask_pii_batch
 from app.services.terminology_checker import apply_terminology_fix, check_terminology
+from app.services.verification_service import (
+    batch_verify,
+    get_review_queue,
+    get_verification_stats,
+    update_verification_status,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -441,6 +447,106 @@ async def apply_grammar_endpoint(
         updated += 1
 
     return {"updated": updated}
+
+
+# =============================================================================
+# Verification (대조관리) Endpoints (P7-T1.3)
+# =============================================================================
+
+
+# @TASK P7-T1.3 - 회의별 자막 검증 통계
+# @SPEC docs/planning/08-feature-tasks.md
+@router.get(
+    "/{meeting_id}/subtitles/verification-stats",
+    summary="회의별 자막 검증 통계",
+)
+async def get_subtitle_verification_stats(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의별 자막 검증 통계를 조회합니다.
+
+    verified / unverified / flagged 비율과 진행률을 반환합니다.
+    """
+    return get_verification_stats(supabase, meeting_id)
+
+
+# @TASK P7-T1.3 - 미검증/저신뢰 자막 큐 조회
+@router.get(
+    "/{meeting_id}/subtitles/review-queue",
+    summary="미검증/저신뢰 자막 큐 조회",
+)
+async def get_subtitle_review_queue(
+    meeting_id: str,
+    confidence_threshold: float = Query(0.7, ge=0.0, le=1.0),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """미검증/저신뢰 자막 큐를 조회합니다.
+
+    verification_status가 'verified'가 아닌 자막을 신뢰도 오름차순으로 반환합니다.
+    """
+    return get_review_queue(supabase, meeting_id, confidence_threshold, limit, offset)
+
+
+# @TASK P7-T1.3 - 개별 자막 검증 상태 변경
+@router.patch(
+    "/{meeting_id}/subtitles/{subtitle_id}/verify",
+    summary="개별 자막 검증 상태 변경",
+)
+async def verify_subtitle(
+    meeting_id: str,
+    subtitle_id: str,
+    body: dict,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """개별 자막의 검증 상태를 변경합니다.
+
+    body: { "status": "verified" | "flagged" | "unverified" }
+    """
+    status_val = body.get("status")
+    if status_val not in ("verified", "flagged", "unverified"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="status must be 'verified', 'flagged', or 'unverified'",
+        )
+    result = update_verification_status(supabase, meeting_id, subtitle_id, status_val)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subtitle not found",
+        )
+    return result
+
+
+# @TASK P7-T1.3 - 일괄 자막 검증
+@router.post(
+    "/{meeting_id}/subtitles/batch-verify",
+    summary="일괄 자막 검증",
+)
+async def batch_verify_subtitles(
+    meeting_id: str,
+    body: dict,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """여러 자막의 검증 상태를 일괄 변경합니다.
+
+    body: { "subtitle_ids": [...], "status": "verified" | "flagged" | "unverified" }
+    """
+    subtitle_ids = body.get("subtitle_ids", [])
+    status_val = body.get("status", "verified")
+    if not subtitle_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="subtitle_ids is required",
+        )
+    if status_val not in ("verified", "flagged", "unverified"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid status",
+        )
+    return batch_verify(supabase, meeting_id, subtitle_ids, status_val)
 
 
 @router.get(

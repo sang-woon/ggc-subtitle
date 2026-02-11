@@ -86,11 +86,12 @@ def _format_duration_korean(seconds: int) -> str:
 
 
 # @TASK P5-T5.1 - 경기도의회 공식 회의록 포맷 생성
-def export_official(meeting: dict, subtitles: list[dict]) -> str:
+def export_official(meeting: dict, subtitles: list[dict], summary: dict | None = None) -> str:
     """경기도의회 공식 회의록 형식으로 내보냅니다.
 
     형식:
     - 헤더: 이중선 구분선, 회의 제목, 일시, 영상 길이
+    - AI 요약 (있는 경우)
     - 본문: 화자별 발언 블록 (동일 화자 연속 발언 병합)
     - 푸터: 면책 조항, 생성 일시
     """
@@ -114,6 +115,26 @@ def export_official(meeting: dict, subtitles: list[dict]) -> str:
         lines.append(f" 영상 길이: {duration_str}")
     lines.append(border_double)
     lines.append("")
+
+    # --- AI 요약 (있는 경우) ---
+    if summary:
+        lines.append("【 AI 요약 】")
+        lines.append("")
+        if summary.get("summary_text"):
+            lines.append(f"  {summary['summary_text']}")
+            lines.append("")
+        if summary.get("key_decisions"):
+            lines.append("  ■ 핵심 결정사항")
+            for decision in summary["key_decisions"]:
+                lines.append(f"    - {decision}")
+            lines.append("")
+        if summary.get("action_items"):
+            lines.append("  ■ 후속 조치")
+            for item in summary["action_items"]:
+                lines.append(f"    - {item}")
+            lines.append("")
+        lines.append(border_single)
+        lines.append("")
 
     # --- 본문 ---
     grouped = _group_by_speaker(subtitles)
@@ -142,11 +163,12 @@ def export_official(meeting: dict, subtitles: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def export_markdown(meeting: dict, subtitles: list[dict]) -> str:
+def export_markdown(meeting: dict, subtitles: list[dict], summary: dict | None = None) -> str:
     """Markdown 형식의 회의록을 생성합니다.
 
     경기도의회 회의록 형식에 맞춰:
     - 회의 기본 정보 (제목, 일시, 영상 길이)
+    - AI 요약 (있는 경우)
     - 발언자별 그룹화된 발언 내용
     - 타임스탬프 포함
     """
@@ -169,9 +191,32 @@ def export_markdown(meeting: dict, subtitles: list[dict]) -> str:
         "",
         "---",
         "",
-        "## 회의록",
-        "",
     ]
+
+    # --- AI 요약 (있는 경우) ---
+    if summary:
+        lines.append("## AI 요약")
+        lines.append("")
+        if summary.get("summary_text"):
+            lines.append(f"> {summary['summary_text']}")
+            lines.append("")
+        if summary.get("key_decisions"):
+            lines.append("### 핵심 결정사항")
+            lines.append("")
+            for decision in summary["key_decisions"]:
+                lines.append(f"- {decision}")
+            lines.append("")
+        if summary.get("action_items"):
+            lines.append("### 후속 조치")
+            lines.append("")
+            for item in summary["action_items"]:
+                lines.append(f"- [ ] {item}")
+            lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    lines.append("## 회의록")
+    lines.append("")
 
     grouped = _group_by_speaker(subtitles)
 

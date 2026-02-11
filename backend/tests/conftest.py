@@ -83,6 +83,15 @@ class MockSupabaseQuery:
     def delete(self, *args, **kwargs) -> "MockSupabaseQuery":
         return self
 
+    def upsert(self, *args, **kwargs) -> "MockSupabaseQuery":
+        return self
+
+    def neq(self, *args, **kwargs) -> "MockSupabaseQuery":
+        return self
+
+    def lt(self, *args, **kwargs) -> "MockSupabaseQuery":
+        return self
+
     def in_(self, *args, **kwargs) -> "MockSupabaseQuery":
         return self
 

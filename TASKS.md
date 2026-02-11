@@ -134,3 +134,92 @@
   - `frontend/src/app/bills/page.tsx` 신규
   - 의안 목록 + 검색/필터 + 관련 회의록 연결
   - 의존성: T4.2
+
+---
+
+## Phase 7: 대조관리 + AI 요약
+
+### Feature 6: 대조관리 (Verification)
+
+- [x] **P7-T1.1**: DB 마이그레이션 - 검증 상태 필드 `담당: backend-specialist`
+  - `backend/migrations/005_phase7.sql` 신규
+  - subtitles 테이블에 `verification_status VARCHAR(20) DEFAULT 'unverified'` 추가
+  - CHECK (verification_status IN ('unverified', 'verified', 'flagged'))
+  - meeting_summaries 테이블 신규 생성
+  - 의존성: 없음
+
+- [x] **P7-T1.2**: 대조관리 서비스 `담당: backend-specialist`
+  - `backend/app/services/verification_service.py` 신규
+  - `get_verification_stats(meeting_id)` → 검증 통계 (verified/unverified/flagged 건수)
+  - `update_verification_status(subtitle_id, status)` → 개별 자막 검증 상태 변경
+  - `batch_verify(meeting_id, subtitle_ids)` → 일괄 검증 처리
+  - `get_low_confidence_subtitles(meeting_id, threshold=0.7)` → 낮은 신뢰도 자막 우선 표시
+  - 의존성: T1.1
+
+- [x] **P7-T1.3**: 대조관리 API 엔드포인트 `담당: backend-specialist`
+  - `backend/app/api/subtitles.py` 수정
+  - `GET /api/meetings/{id}/subtitles/verification-stats` → 검증 통계
+  - `PATCH /api/meetings/{id}/subtitles/{sid}/verify` → 개별 검증
+  - `POST /api/meetings/{id}/subtitles/batch-verify` → 일괄 검증
+  - `GET /api/meetings/{id}/subtitles/review-queue` → 미검증/저신뢰 자막 큐
+  - 의존성: T1.2
+
+- [x] **P7-T1.4**: Frontend API 클라이언트 (대조관리) `담당: frontend-specialist`
+  - `frontend/src/lib/api.ts` 수정
+  - `getVerificationStats()`, `verifySubtitle()`, `batchVerify()`, `getReviewQueue()` 추가
+  - `frontend/src/types/index.ts` 수정 - VerificationStats, ReviewQueueItem 타입
+  - 의존성: T1.3
+
+- [x] **P7-T1.5**: 대조 검증 UI `담당: frontend-specialist`
+  - `frontend/src/app/vod/[id]/verify/page.tsx` 신규
+  - 좌: Mp4Player (구간 반복 재생 기능)
+  - 우: 검증 대기 자막 큐 (낮은 신뢰도 우선 정렬)
+  - 각 자막: 재생 버튼 + 텍스트 + 검증(✓)/수정/플래그(⚑) 버튼
+  - 상단: 검증 진행률 바 (verified/total %)
+  - 의존성: T1.4
+
+- [x] **P7-T1.6**: VOD 뷰어에 대조 검증 링크 `담당: frontend-specialist`
+  - `frontend/src/app/vod/[id]/page.tsx` 수정
+  - "자막 검증" 버튼 → `/vod/{id}/verify`
+  - 검증 진행률 배지 표시
+  - 의존성: T1.5
+
+### Feature 7: AI 요약 (Meeting Summary)
+
+- [x] **P7-T2.1**: AI 요약 서비스 `담당: backend-specialist`
+  - `backend/app/services/summary_service.py` 신규
+  - `generate_meeting_summary(meeting_id, supabase)` → GPT 기반 회의 요약 생성
+  - 자막을 화자별로 그룹핑 → GPT에 전달 → 구조화된 요약 반환
+  - 요약 구조: 전체 요약(2-3문장), 안건별 요약, 핵심 결정사항, 후속 조치
+  - grammar_checker.py와 동일한 httpx + OpenAI 패턴 사용
+  - 의존성: T1.1 (meeting_summaries 테이블)
+
+- [x] **P7-T2.2**: AI 요약 API `담당: backend-specialist`
+  - `backend/app/api/meetings.py` 수정
+  - `POST /api/meetings/{id}/summary` → 요약 생성 (비동기)
+  - `GET /api/meetings/{id}/summary` → 요약 조회
+  - `DELETE /api/meetings/{id}/summary` → 요약 삭제 (재생성용)
+  - 의존성: T2.1
+
+- [x] **P7-T2.3**: Frontend API 클라이언트 (요약) `담당: frontend-specialist`
+  - `frontend/src/lib/api.ts` 수정
+  - `generateSummary(meetingId)`, `getSummary(meetingId)`, `deleteSummary(meetingId)` 추가
+  - `frontend/src/types/index.ts` 수정 - MeetingSummaryType 타입
+  - 의존성: T2.2
+
+- [x] **P7-T2.4**: 요약 패널 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/MeetingSummaryPanel.tsx` 신규
+  - 요약 표시: 전체 요약 → 안건별 → 핵심 결정 → 후속 조치
+  - "AI 요약 생성" 버튼 (요약 미존재 시)
+  - 생성 중 로딩 상태 + 재생성 버튼
+  - 의존성: T2.3
+
+- [x] **P7-T2.5**: VOD 뷰어에 요약 패널 통합 `담당: frontend-specialist`
+  - `frontend/src/app/vod/[id]/page.tsx` 수정
+  - MeetingSummaryPanel을 사이드바에 탭으로 추가 (자막 | 요약 | 정보)
+  - 의존성: T2.4
+
+- [x] **P7-T2.6**: 내보내기에 요약 포함 `담당: backend-specialist`
+  - `backend/app/services/transcript_export.py` 수정
+  - 공식 회의록 + 마크다운 내보내기에 요약 섹션 추가
+  - 의존성: T2.1

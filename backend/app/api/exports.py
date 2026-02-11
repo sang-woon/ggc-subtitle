@@ -64,6 +64,21 @@ async def export_meeting_transcript(
         raise HTTPException(status_code=404, detail="회의를 찾을 수 없습니다.")
 
     subtitles = _fetch_all_subtitles(supabase, meeting_id)
+
+    # AI 요약 조회 (있으면 포함)
+    summary = None
+    try:
+        result = (
+            supabase.table("meeting_summaries")
+            .select("*")
+            .eq("meeting_id", meeting_id)
+            .execute()
+        )
+        if result.data:
+            summary = result.data[0]
+    except Exception:
+        pass  # 요약 테이블 없어도 무시
+
     title = meeting.get("title", "회의록").replace(" ", "_")
 
     ext_map = {
@@ -78,11 +93,11 @@ async def export_meeting_transcript(
     disposition = f"attachment; filename*=UTF-8''{encoded_name}"
 
     if format == ExportFormat.MARKDOWN:
-        content = export_markdown(meeting, subtitles)
+        content = export_markdown(meeting, subtitles, summary=summary)
     elif format == ExportFormat.SRT:
         content = export_srt(subtitles)
     elif format == ExportFormat.OFFICIAL:
-        content = export_official(meeting, subtitles)
+        content = export_official(meeting, subtitles, summary=summary)
     else:
         data = export_json(meeting, subtitles)
         content = json.dumps(data, ensure_ascii=False, indent=2)

@@ -7,15 +7,16 @@ import { useRouter } from 'next/navigation';
 
 import Header from '../../../components/Header';
 import MeetingInfoPanel from '../../../components/MeetingInfoPanel';
+import MeetingSummaryPanel from '../../../components/MeetingSummaryPanel';
 import Mp4Player from '../../../components/Mp4Player';
 import SubtitlePanel from '../../../components/SubtitlePanel';
 import TranscriptExportButton from '../../../components/TranscriptExportButton';
 import TranscriptStatusBadge from '../../../components/TranscriptStatusBadge';
 import VideoControls from '../../../components/VideoControls';
-import { apiClient, ApiError, startSttProcessing, getSttStatus } from '../../../lib/api';
+import { apiClient, ApiError, startSttProcessing, getSttStatus, getVerificationStats } from '../../../lib/api';
 
 import type { SttStatusResponse } from '../../../lib/api';
-import type { MeetingType, SubtitleType } from '../../../types';
+import type { MeetingType, SubtitleType, VerificationStatsType } from '../../../types';
 
 interface VodViewerPageProps {
   params: { id: string };
@@ -35,6 +36,10 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
   const [sttStatus, setSttStatus] = useState<SttStatusResponse | null>(null);
   const [sttError, setSttError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 사이드바 탭 상태
+  const [activeTab, setActiveTab] = useState<'subtitles' | 'summary'>('subtitles');
+  const [verificationStats, setVerificationStats] = useState<VerificationStatsType | null>(null);
 
   const { id } = params;
 
@@ -65,6 +70,14 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
         setSubtitles(subtitlesResponse.items ?? []);
         if (meetingData.duration_seconds) {
           setDuration(meetingData.duration_seconds);
+        }
+
+        // 검증 통계 로드 (실패해도 무시)
+        try {
+          const stats = await getVerificationStats(id);
+          setVerificationStats(stats);
+        } catch {
+          // 검증 통계 로드 실패는 무시
         }
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -259,14 +272,44 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
             />
           </div>
 
+          {/* 탭 전환 (자막 | 요약) */}
+          <div className="flex border-b border-gray-200 mb-2">
+            <button
+              onClick={() => setActiveTab('subtitles')}
+              className={`flex-1 py-2 text-sm font-medium text-center transition-colors ${
+                activeTab === 'subtitles'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              자막
+            </button>
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`flex-1 py-2 text-sm font-medium text-center transition-colors ${
+                activeTab === 'summary'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              AI 요약
+            </button>
+          </div>
+
           <div className="flex-1 min-h-0">
-            <SubtitlePanel
-              subtitles={subtitles}
-              currentTime={currentTime}
-              autoScroll={false}
-              onSubtitleClick={handleSubtitleClick}
-              isLoading={isLoading}
-            />
+            {activeTab === 'subtitles' ? (
+              <SubtitlePanel
+                subtitles={subtitles}
+                currentTime={currentTime}
+                autoScroll={false}
+                onSubtitleClick={handleSubtitleClick}
+                isLoading={isLoading}
+              />
+            ) : (
+              <div className="h-full overflow-y-auto p-2">
+                <MeetingSummaryPanel meetingId={id} />
+              </div>
+            )}
           </div>
 
           {/* STT 자막 생성 영역 */}
@@ -328,14 +371,27 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
             </div>
           )}
 
-          {/* 자막 편집 버튼 */}
+          {/* 자막 편집 + 검증 버튼 */}
           {subtitles.length > 0 && (
-            <Link
-              href={`/vod/${id}/edit`}
-              className="mt-2 w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors inline-block text-center"
-            >
-              자막 편집
-            </Link>
+            <div className="mt-2 flex gap-2">
+              <Link
+                href={`/vod/${id}/edit`}
+                className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-center"
+              >
+                자막 편집
+              </Link>
+              <Link
+                href={`/vod/${id}/verify`}
+                className="flex-1 rounded-md border border-green-300 bg-green-50 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition-colors text-center"
+              >
+                자막 검증
+                {verificationStats && (
+                  <span className="ml-1 text-xs">
+                    ({Math.round(verificationStats.progress * 100)}%)
+                  </span>
+                )}
+              </Link>
+            </div>
           )}
 
           <TranscriptExportButton meetingId={id} meetingTitle={meeting.title} />
