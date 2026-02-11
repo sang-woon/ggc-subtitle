@@ -275,6 +275,26 @@ class ChannelSttService:
         task = self._active_tasks.get(channel_id)
         return task is not None and not task.done()
 
+    def get_debug_info(self, channel_id: str) -> dict:
+        """채널 STT 디버그 정보를 반환합니다."""
+        task = self._active_tasks.get(channel_id)
+        last_recv = self._last_receive_time.get(channel_id)
+        elapsed = None
+        if last_recv is not None:
+            elapsed = round(time.monotonic() - last_recv, 1)
+        subtitle_count = self._subtitle_counter.get(channel_id, 0)
+        buf = self._sentence_buffers.get(channel_id)
+        return {
+            "channel_id": channel_id,
+            "task_exists": task is not None,
+            "task_done": task.done() if task else None,
+            "task_exception": str(task.exception()) if task and task.done() and task.exception() else None,
+            "last_deepgram_recv_secs_ago": elapsed,
+            "subtitle_count": subtitle_count,
+            "buffer_text": buf.text[:100] if buf and buf.parts else None,
+            "active_ws_rooms": list(manager.active_connections.keys()),
+        }
+
     async def _run_with_reconnect(
         self,
         channel_id: str,

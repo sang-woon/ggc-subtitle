@@ -137,6 +137,17 @@ async def get_channel_stt_status(channel_id: str) -> dict:
     return {"running": service.is_running(channel_id), "channel_id": channel_id}
 
 
+@router.get("/{channel_id}/stt/debug")
+async def get_channel_stt_debug(channel_id: str) -> dict:
+    """채널 STT 디버그 정보를 반환합니다."""
+    channel = get_channel(channel_id)
+    if channel is None:
+        raise HTTPException(status_code=404, detail=f"Channel {channel_id} not found")
+
+    service = get_channel_stt_service()
+    return service.get_debug_info(channel_id)
+
+
 @router.get("/{channel_id}")
 async def get_channel_by_id(channel_id: str) -> dict:
     """채널 ID로 채널을 조회합니다."""
