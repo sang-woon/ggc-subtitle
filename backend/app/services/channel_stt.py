@@ -21,6 +21,7 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 import httpx
 import websockets
@@ -333,8 +334,9 @@ class ChannelSttService:
     ) -> None:
         """Deepgram WebSocket에 연결하고 HLS 세그먼트를 스트리밍합니다."""
         # 의회 전문용어 키워드 부스팅 (Deepgram이 더 정확히 인식하도록)
+        # 한국어 키워드는 URL 인코딩 필수 (인코딩 안 하면 Deepgram이 400 Bad Request 반환)
         keywords_param = "&".join(
-            f"keywords={kw}"
+            f"keywords={quote(kw)}"
             for kw in [
                 "산회:2", "개의:2", "정회:2", "속개:2",
                 "상정:1.5", "의결:1.5", "질의:1.5", "답변:1.5",
