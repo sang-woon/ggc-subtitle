@@ -31,6 +31,7 @@ from app.api.websocket import manager
 from app.core.config import settings
 from app.services.dictionary import get_default_dictionary
 from app.services.hls_parser import HlsPlaylistParser
+from app.services.speaker_utils import group_words_by_speaker
 
 logger = logging.getLogger(__name__)
 
@@ -145,63 +146,6 @@ class _SentenceBuffer:
         self.end_time = 0.0
         self.conf_sum = 0.0
         self.conf_count = 0
-
-
-def _group_words_by_speaker(words: list[dict]) -> list[dict]:
-    """words 배열을 화자 경계에서 분할하여 그룹별로 반환합니다.
-
-    연속된 같은 화자의 단어를 하나의 그룹으로 묶고,
-    화자가 바뀌는 지점에서 새 그룹을 시작합니다.
-
-    Returns:
-        list of dicts with keys: speaker, text, confidence, start, end
-    """
-    if not words:
-        return []
-
-    groups: list[dict] = []
-    current_speaker = words[0].get("speaker")
-    current_words: list[str] = []
-    conf_sum = 0.0
-    conf_count = 0
-    start = words[0].get("start", 0.0)
-    end = words[0].get("end", 0.0)
-
-    for w in words:
-        sp = w.get("speaker")
-        word_text = w.get("punctuated_word", w.get("word", ""))
-
-        if sp != current_speaker and current_words:
-            # 화자가 바뀌면 현재 그룹을 확정하고 새 그룹 시작
-            groups.append({
-                "speaker": current_speaker,
-                "text": " ".join(current_words),
-                "confidence": conf_sum / conf_count if conf_count else 0.0,
-                "start": start,
-                "end": end,
-            })
-            current_words = []
-            conf_sum = 0.0
-            conf_count = 0
-            current_speaker = sp
-            start = w.get("start", 0.0)
-
-        current_words.append(word_text)
-        conf_sum += w.get("confidence", 0.0)
-        conf_count += 1
-        end = w.get("end", 0.0)
-
-    # 마지막 그룹
-    if current_words:
-        groups.append({
-            "speaker": current_speaker,
-            "text": " ".join(current_words),
-            "confidence": conf_sum / conf_count if conf_count else 0.0,
-            "start": start,
-            "end": end,
-        })
-
-    return groups
 
 
 class ChannelSttService:
@@ -489,7 +433,7 @@ class ChannelSttService:
                 # words 배열에서 화자 경계별로 분할하여 처리
                 words = alt.get("words", [])
                 if words:
-                    speaker_groups = _group_words_by_speaker(words)
+                    speaker_groups = group_words_by_speaker(words)
                 else:
                     # words가 없는 경우 폴백
                     transcript = alt.get("transcript", "").strip()

@@ -203,10 +203,12 @@ class VodProcessor:
             VodDownloadError: 다운로드 실패 시
         """
         timeout = aiohttp.ClientTimeout(total=self._config.download_timeout)
+        # KMS 서버는 Referer 헤더 필수
+        headers = {"Referer": "https://kms.ggc.go.kr/"}
 
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(vod_url) as response:
+                async with session.get(vod_url, headers=headers) as response:
                     if response.status != 200:
                         raise VodDownloadError(
                             f"Failed to download VOD: HTTP {response.status}"

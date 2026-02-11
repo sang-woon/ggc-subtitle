@@ -45,6 +45,10 @@ def get_supabase() -> Client:
     return get_supabase_client()
 
 
+# Alias for backward compatibility (used in tests/conftest.py)
+get_db = get_supabase
+
+
 async def test_supabase_connection() -> bool:
     """Supabase 연결을 테스트합니다.
 

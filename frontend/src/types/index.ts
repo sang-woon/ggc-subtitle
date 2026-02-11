@@ -8,6 +8,9 @@ export interface MeetingType {
   vod_url: string | null;
   status: 'scheduled' | 'live' | 'processing' | 'ended';
   duration_seconds: number | null;
+  meeting_type: string | null;
+  committee: string | null;
+  transcript_status: 'draft' | 'reviewing' | 'final';
   created_at: string;
   updated_at: string;
 }
@@ -52,4 +55,90 @@ export interface ChannelType {
 
 export interface VodRegisterFormType {
   url: string;
+}
+
+// Bills types
+export interface BillItem {
+  id: string;
+  bill_number: string;
+  title: string;
+  proposer: string | null;
+  committee: string | null;
+  status: 'received' | 'reviewing' | 'decided' | 'promulgated';
+  proposed_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BillMention {
+  id: string;
+  bill_id: string;
+  meeting_id: string;
+  subtitle_id: string | null;
+  start_time: number | null;
+  end_time: number | null;
+  note: string | null;
+  meeting_title?: string;
+  meeting_date?: string;
+  created_at: string;
+}
+
+export interface BillDetail extends BillItem {
+  mentions: BillMention[];
+}
+
+export interface BillsResponse {
+  items: BillItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface BillCreateData {
+  bill_number: string;
+  title: string;
+  proposer?: string;
+  committee?: string;
+  status?: 'received' | 'reviewing' | 'decided' | 'promulgated';
+  proposed_date?: string;
+}
+
+// Phase 6A types
+
+export interface ParticipantType {
+  id: string;
+  meeting_id: string;
+  councilor_id: string;
+  name: string | null;
+  role: string | null;
+  created_at: string | null;
+}
+
+export interface AgendaType {
+  id: string;
+  meeting_id: string;
+  order_num: number;
+  title: string;
+  description: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface SubtitleHistoryType {
+  id: string;
+  subtitle_id: string;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string | null;
+  created_at: string;
+}
+
+export interface PublicationType {
+  id: string;
+  meeting_id: string;
+  status: 'draft' | 'reviewing' | 'final';
+  published_by: string | null;
+  notes: string | null;
+  created_at: string;
 }

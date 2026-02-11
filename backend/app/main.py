@@ -10,8 +10,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.bills import router as bills_router
 from app.api.channels import router as channels_router
+from app.api.exports import router as exports_router
 from app.api.meetings import router as meetings_router
+from app.api.search import router as search_router
 from app.api.subtitles import router as subtitles_router
 from app.api.websocket import router as websocket_router
 from app.core.config import settings
@@ -52,8 +55,11 @@ app.add_middleware(
 )
 
 # API 라우터 등록
+app.include_router(bills_router)
 app.include_router(channels_router)
+app.include_router(exports_router)
 app.include_router(meetings_router)
+app.include_router(search_router, prefix="/api")
 app.include_router(subtitles_router)
 app.include_router(websocket_router)
 

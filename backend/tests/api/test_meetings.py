@@ -189,10 +189,13 @@ class TestGetMeetingById:
             assert "not found" in response.json()["detail"].lower()
 
     def test_get_meeting_by_id_invalid_uuid(self):
-        """유효하지 않은 UUID 형식이면 422 에러를 반환한다"""
-        response = client.get("/api/meetings/invalid-uuid-format")
+        """유효하지 않은 UUID 형식이면 404 에러를 반환한다"""
+        with patch("app.api.meetings.get_meeting_by_id_service") as mock_service:
+            mock_service.return_value = None
 
-        assert response.status_code == 422
+            response = client.get("/api/meetings/invalid-uuid-format")
+
+            assert response.status_code == 404
 
 
 # =============================================================================

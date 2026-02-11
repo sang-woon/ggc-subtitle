@@ -1,15 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import Header from '../../../components/Header';
+import MeetingInfoPanel from '../../../components/MeetingInfoPanel';
 import Mp4Player from '../../../components/Mp4Player';
 import SubtitlePanel from '../../../components/SubtitlePanel';
+import TranscriptExportButton from '../../../components/TranscriptExportButton';
+import TranscriptStatusBadge from '../../../components/TranscriptStatusBadge';
 import VideoControls from '../../../components/VideoControls';
-import { apiClient } from '../../../lib/api';
+import { apiClient, ApiError, startSttProcessing, getSttStatus } from '../../../lib/api';
 
+import type { SttStatusResponse } from '../../../lib/api';
 import type { MeetingType, SubtitleType } from '../../../types';
 
 interface VodViewerPageProps {
@@ -26,7 +31,24 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  // STT 처리 상태
+  const [sttStatus, setSttStatus] = useState<SttStatusResponse | null>(null);
+  const [sttError, setSttError] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const { id } = params;
+
+  // 자막 데이터 리로드
+  const reloadSubtitles = useCallback(async () => {
+    try {
+      const subtitlesResponse = await apiClient<{ items: SubtitleType[] }>(
+        `/api/meetings/${id}/subtitles`
+      );
+      setSubtitles(subtitlesResponse.items ?? []);
+    } catch {
+      // 자막 리로드 실패는 조용히 무시
+    }
+  }, [id]);
 
   useEffect(() => {
     async function fetchData() {
@@ -34,13 +56,13 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
         setIsLoading(true);
         setError(null);
 
-        const [meetingData, subtitlesData] = await Promise.all([
+        const [meetingData, subtitlesResponse] = await Promise.all([
           apiClient<MeetingType>(`/api/meetings/${id}`),
-          apiClient<SubtitleType[]>(`/api/meetings/${id}/subtitles`),
+          apiClient<{ items: SubtitleType[] }>(`/api/meetings/${id}/subtitles`),
         ]);
 
         setMeeting(meetingData);
-        setSubtitles(subtitlesData);
+        setSubtitles(subtitlesResponse.items ?? []);
         if (meetingData.duration_seconds) {
           setDuration(meetingData.duration_seconds);
         }
@@ -53,6 +75,97 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
 
     fetchData();
   }, [id]);
+
+  // 폴링 정리
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
+  // STT 진행률 폴링 시작
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+    }
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const status = await getSttStatus(id);
+        setSttStatus(status);
+
+        if (status.status === 'completed') {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          // 완료 시 자막 리로드
+          await reloadSubtitles();
+        } else if (status.status === 'failed') {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          setSttError(status.error || '알 수 없는 오류가 발생했습니다.');
+        }
+      } catch {
+        // 폴링 에러는 조용히 무시 (다음 폴링에서 재시도)
+      }
+    }, 2000);
+  }, [id, reloadSubtitles]);
+
+  // 페이지 로드 시 STT 상태 자동 확인 (자막이 없고 vod_url이 있을 때)
+  useEffect(() => {
+    if (isLoading || subtitles.length > 0 || !meeting?.vod_url) return;
+
+    async function checkSttStatus() {
+      try {
+        const status = await getSttStatus(id);
+        if (status.status === 'running' || status.status === 'pending') {
+          setSttStatus(status);
+          startPolling();
+        }
+      } catch {
+        // 상태 확인 실패는 무시 (아직 시작 안 한 경우)
+      }
+    }
+
+    checkSttStatus();
+  }, [id, isLoading, subtitles.length, meeting?.vod_url, startPolling]);
+
+  // 자막 생성 시작
+  const handleStartStt = async () => {
+    try {
+      setSttError(null);
+      const result = await startSttProcessing(id);
+      setSttStatus({
+        meeting_id: id,
+        status: 'running',
+        progress: 0,
+        message: result.message,
+        error: null,
+        task_id: result.task_id,
+      });
+      startPolling();
+    } catch (err) {
+      // 409 = 이미 처리 중 → 에러 대신 폴링 시작
+      if (err instanceof ApiError && err.status === 409) {
+        setSttError(null);
+        setSttStatus({
+          meeting_id: id,
+          status: 'running',
+          progress: 0,
+          message: '진행 상태 확인 중...',
+          error: null,
+        });
+        startPolling();
+        return;
+      }
+      if (err instanceof Error) {
+        setSttError(err.message);
+      } else {
+        setSttError('STT 처리 시작에 실패했습니다.');
+      }
+    }
+  };
 
   const handleTimeUpdate = (time: number) => {
     setCurrentTime(time);
@@ -71,6 +184,11 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
   const handleHomeClick = () => {
     router.push('/');
   };
+
+  const isSttRunning =
+    sttStatus?.status === 'pending' || sttStatus?.status === 'running';
+  const showSttButton =
+    !isLoading && subtitles.length === 0 && !isSttRunning && meeting?.vod_url;
 
   // Loading state
   if (isLoading) {
@@ -127,14 +245,108 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
         {/* Sidebar - Subtitle Panel (30% on desktop) */}
         <div
           data-testid="sidebar"
-          className="w-full lg:w-[30%] h-[50vh] lg:h-auto"
+          className="w-full lg:w-[30%] h-[50vh] lg:h-auto flex flex-col"
         >
-          <SubtitlePanel
-            subtitles={subtitles}
-            currentTime={currentTime}
-            autoScroll={false}
-            onSubtitleClick={handleSubtitleClick}
-          />
+          {/* 회의록 상태 배지 */}
+          <div className="mb-2 flex items-center gap-2">
+            <TranscriptStatusBadge
+              meetingId={meeting.id}
+              status={meeting.transcript_status || 'draft'}
+              editable
+              onStatusChange={(newStatus) =>
+                setMeeting((prev) => prev ? { ...prev, transcript_status: newStatus } : prev)
+              }
+            />
+          </div>
+
+          <div className="flex-1 min-h-0">
+            <SubtitlePanel
+              subtitles={subtitles}
+              currentTime={currentTime}
+              autoScroll={false}
+              onSubtitleClick={handleSubtitleClick}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* STT 자막 생성 영역 */}
+          {(showSttButton || isSttRunning || sttError) && (
+            <div className="mt-2 p-3 bg-white border border-gray-200 rounded-lg">
+              {/* 자막 생성 버튼 */}
+              {showSttButton && !sttError && (
+                <button
+                  data-testid="stt-start-button"
+                  onClick={handleStartStt}
+                  className="w-full py-2.5 px-4 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-light transition-colors"
+                >
+                  자막 생성 (AI)
+                </button>
+              )}
+
+              {/* 진행률 표시 */}
+              {isSttRunning && sttStatus && (
+                <div data-testid="stt-progress">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      자막 생성 중...
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {Math.round(sttStatus.progress * 100)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.round(sttStatus.progress * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {sttStatus.message}
+                  </p>
+                </div>
+              )}
+
+              {/* 완료 메시지 */}
+              {sttStatus?.status === 'completed' && subtitles.length > 0 && (
+                <p className="text-sm text-green-600 font-medium">
+                  자막 생성 완료 ({subtitles.length}개)
+                </p>
+              )}
+
+              {/* 에러 메시지 */}
+              {sttError && (
+                <div data-testid="stt-error">
+                  <p className="text-sm text-red-600 mb-2">{sttError}</p>
+                  <button
+                    onClick={handleStartStt}
+                    className="w-full py-2 px-4 bg-red-50 text-red-700 text-sm font-medium rounded-md border border-red-200 hover:bg-red-100 transition-colors"
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 자막 편집 버튼 */}
+          {subtitles.length > 0 && (
+            <Link
+              href={`/vod/${id}/edit`}
+              className="mt-2 w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors inline-block text-center"
+            >
+              자막 편집
+            </Link>
+          )}
+
+          <TranscriptExportButton meetingId={id} meetingTitle={meeting.title} />
+
+          {/* 회의 정보 패널 */}
+          <div className="mt-2">
+            <MeetingInfoPanel
+              meeting={meeting}
+              onMeetingUpdate={(updated) => setMeeting(updated)}
+            />
+          </div>
         </div>
       </main>
     </div>

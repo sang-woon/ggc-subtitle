@@ -14,6 +14,24 @@ export interface SubtitlePanelProps {
   onSubtitleClick?: (startTime: number) => void;
   /** STT interim (미확정) 텍스트 - 확정 전 실시간 미리보기 */
   interimText?: string;
+  /** 데이터 로딩 중 여부 (false이고 자막이 없으면 '자막 없음' 표시) */
+  isLoading?: boolean;
+  /** 실시간 모드 여부. true면 클릭 시 시점 이동 불가 안내 */
+  isLive?: boolean;
+  /** STT 시작 시각 (ms timestamp). 설정 시 각 자막에 실제 시계 시간 표시 */
+  sttStartedAt?: number | null;
+  /** 실시간 클릭 시 안내 콜백 */
+  onLiveClickNotice?: () => void;
+}
+
+/**
+ * 시계 시간 포맷 (ms timestamp + 경과 초 → "HH:MM:SS")
+ */
+function formatClockTime(sttStartedAt: number, startTime: number): string {
+  const date = new Date(sttStartedAt + startTime * 1000);
+  return [date.getHours(), date.getMinutes(), date.getSeconds()]
+    .map((v) => v.toString().padStart(2, '0'))
+    .join(':');
 }
 
 const SubtitlePanel = React.memo(function SubtitlePanel({
@@ -23,6 +41,10 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
   autoScroll = true,
   onSubtitleClick,
   interimText,
+  isLoading = true,
+  isLive = false,
+  sttStartedAt = null,
+  onLiveClickNotice,
 }: SubtitlePanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const prevSubtitleCountRef = useRef(subtitles.length);
@@ -65,11 +87,17 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {subtitles.length === 0 && !interimText ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
-            <div
-              data-testid="loading-spinner"
-              className="w-8 h-8 border-4 border-gray-200 border-t-primary rounded-full animate-spin mb-4"
-            />
-            <p className="text-sm">자막을 불러오는 중...</p>
+            {isLoading ? (
+              <>
+                <div
+                  data-testid="loading-spinner"
+                  className="w-8 h-8 border-4 border-gray-200 border-t-primary rounded-full animate-spin mb-4"
+                />
+                <p className="text-sm">자막을 불러오는 중...</p>
+              </>
+            ) : (
+              <p className="text-sm">등록된 자막이 없습니다.</p>
+            )}
           </div>
         ) : (
           <>
@@ -100,6 +128,9 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
               isCurrent={currentSubtitleId === subtitle.id}
               highlightQuery={searchQuery}
               onClick={onSubtitleClick}
+              isLive={isLive}
+              onLiveClickNotice={onLiveClickNotice}
+              clockTime={sttStartedAt ? formatClockTime(sttStartedAt, subtitle.start_time) : null}
             />
           ))}
           </>

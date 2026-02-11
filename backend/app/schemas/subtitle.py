@@ -55,3 +55,30 @@ class SubtitleSearchQuery(BaseModel):
         if not stripped:
             raise ValueError("검색어는 비어있을 수 없습니다")
         return stripped
+
+
+# @TASK P5-T2.1 - 자막 수정 스키마
+# @SPEC docs/planning/02-trd.md#자막-수정-API
+
+
+class SubtitleUpdate(BaseModel):
+    """자막 단건 수정 스키마"""
+
+    text: Optional[str] = Field(None, min_length=1, description="자막 텍스트")
+    speaker: Optional[str] = Field(None, max_length=100, description="화자")
+
+
+class SubtitleBatchItem(BaseModel):
+    """자막 배치 수정 개별 항목 스키마"""
+
+    id: str = Field(..., description="자막 ID")
+    text: Optional[str] = Field(None, min_length=1, description="자막 텍스트")
+    speaker: Optional[str] = Field(None, max_length=100, description="화자")
+
+
+class SubtitleBatchUpdate(BaseModel):
+    """자막 배치 수정 스키마"""
+
+    items: list[SubtitleBatchItem] = Field(
+        ..., min_length=1, description="수정할 자막 항목 목록"
+    )

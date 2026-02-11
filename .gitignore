@@ -108,3 +108,5 @@ nul
 # Root package files (supabase CLI)
 /package.json
 /package-lock.json
+
+.vercel
