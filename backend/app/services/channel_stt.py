@@ -21,7 +21,6 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import quote
 
 import httpx
 import websockets
@@ -333,17 +332,9 @@ class ChannelSttService:
         parser: HlsPlaylistParser,
     ) -> None:
         """Deepgram WebSocket에 연결하고 HLS 세그먼트를 스트리밍합니다."""
-        # 의회 전문용어 키워드 부스팅 (Deepgram이 더 정확히 인식하도록)
-        # 한국어 키워드는 URL 인코딩 필수 (safe=':' 로 콜론은 유지)
-        keywords_param = "&".join(
-            f"keywords={quote(kw, safe=':')}"
-            for kw in [
-                "산회:2", "개의:2", "정회:2", "속개:2",
-                "상정:1.5", "의결:1.5", "질의:1.5", "답변:1.5",
-                "위원장:1.5", "의원:1.5", "도지사:1.5",
-                "경기도의회:2", "보건복지위원회:1.5",
-            ]
-        )
+        # NOTE: 키워드 부스팅은 Deepgram Streaming WebSocket에서
+        # 한국어 인코딩 이슈(HTTP 400)가 있어 비활성화.
+        # 용어 보정은 _dictionary.correct()에서 후처리로 수행.
         ws_url = (
             f"{DEEPGRAM_WS_URL}"
             f"?model=nova-3"
@@ -354,7 +345,6 @@ class ChannelSttService:
             f"&vad_events=true"
             f"&endpointing=300"
             f"&diarize=true"
-            f"&{keywords_param}"
         )
         headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
         http_client = httpx.AsyncClient(timeout=30.0)
