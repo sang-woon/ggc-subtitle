@@ -12,8 +12,10 @@ from supabase import Client
 
 from app.core.database import get_supabase
 from app.schemas.subtitle import SubtitleBatchUpdate, SubtitleUpdate
+from app.services.grammar_checker import check_grammar_batch
 from app.services.history_tracker import get_subtitle_history, record_changes_for_update
 from app.services.pii_masking import mask_pii, mask_pii_batch
+from app.services.terminology_checker import apply_terminology_fix, check_terminology
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +272,175 @@ async def apply_pii_mask(
         })
 
     return {"updated": len(updated_items), "items": updated_items}
+
+
+# =============================================================================
+# Terminology Check (Phase 6B)
+# =============================================================================
+
+
+@router.post(
+    "/{meeting_id}/subtitles/check-terminology",
+    summary="용어 표기 점검",
+)
+async def check_terminology_endpoint(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """자막의 용어 표기 일관성을 점검합니다."""
+    result = (
+        supabase.table("subtitles")
+        .select("id, text")
+        .eq("meeting_id", meeting_id)
+        .order("start_time")
+        .execute()
+    )
+
+    if not result.data:
+        return {"issues": [], "total_issues": 0}
+
+    issues = check_terminology(result.data)
+    return {
+        "issues": [
+            {
+                "subtitle_id": i.subtitle_id,
+                "wrong_term": i.wrong_term,
+                "correct_term": i.correct_term,
+                "category": i.category,
+            }
+            for i in issues
+        ],
+        "total_issues": len(issues),
+    }
+
+
+@router.post(
+    "/{meeting_id}/subtitles/apply-terminology",
+    summary="용어 표기 일괄 교정",
+)
+async def apply_terminology_endpoint(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """자막의 용어를 사전 기반으로 일괄 교정합니다."""
+    result = (
+        supabase.table("subtitles")
+        .select("id, text")
+        .eq("meeting_id", meeting_id)
+        .order("start_time")
+        .execute()
+    )
+
+    if not result.data:
+        return {"updated": 0, "items": []}
+
+    fixes = apply_terminology_fix(result.data)
+
+    # 실제 업데이트 적용
+    for fix in fixes:
+        record_changes_for_update(
+            supabase, fix["id"],
+            {"text": fix["original_text"]},
+            {"text": fix["corrected_text"]},
+            "system:terminology",
+        )
+        supabase.table("subtitles").update({"text": fix["corrected_text"]}).eq("id", fix["id"]).execute()
+
+    return {"updated": len(fixes), "items": fixes}
+
+
+# =============================================================================
+# Grammar Check (Phase 6B)
+# =============================================================================
+
+
+@router.post(
+    "/{meeting_id}/subtitles/check-grammar",
+    summary="AI 문장 검사",
+)
+async def check_grammar_endpoint(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """AI를 사용하여 자막의 맞춤법/문법을 검사합니다."""
+    result = (
+        supabase.table("subtitles")
+        .select("id, text")
+        .eq("meeting_id", meeting_id)
+        .order("start_time")
+        .execute()
+    )
+
+    if not result.data:
+        return {"issues": [], "total_issues": 0}
+
+    try:
+        issues = await check_grammar_batch(result.data)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+        )
+
+    return {
+        "issues": [
+            {
+                "subtitle_id": i.subtitle_id,
+                "original_text": i.original_text,
+                "corrected_text": i.corrected_text,
+                "changes": i.changes,
+            }
+            for i in issues
+        ],
+        "total_issues": len(issues),
+    }
+
+
+@router.post(
+    "/{meeting_id}/subtitles/apply-grammar",
+    summary="AI 문장 교정 적용",
+)
+async def apply_grammar_endpoint(
+    meeting_id: str,
+    corrections: list[dict] = Body(..., description="적용할 교정 목록 [{subtitle_id, corrected_text}]"),
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """AI 문장 검사 결과를 선택적으로 적용합니다."""
+    updated = 0
+
+    for correction in corrections:
+        subtitle_id = correction.get("subtitle_id")
+        corrected_text = correction.get("corrected_text")
+        if not subtitle_id or not corrected_text:
+            continue
+
+        # 원본 조회
+        original_result = (
+            supabase.table("subtitles")
+            .select("text")
+            .eq("id", subtitle_id)
+            .eq("meeting_id", meeting_id)
+            .limit(1)
+            .execute()
+        )
+        if not original_result.data:
+            continue
+
+        original_text = original_result.data[0]["text"]
+        if original_text == corrected_text:
+            continue
+
+        # 이력 기록 + 업데이트
+        record_changes_for_update(
+            supabase, subtitle_id,
+            {"text": original_text},
+            {"text": corrected_text},
+            "system:grammar",
+        )
+        supabase.table("subtitles").update({"text": corrected_text}).eq("id", subtitle_id).execute()
+        updated += 1
+
+    return {"updated": updated}
 
 
 @router.get(

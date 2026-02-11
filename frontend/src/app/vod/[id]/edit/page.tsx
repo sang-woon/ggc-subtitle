@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import Mp4Player from '../../../../components/Mp4Player';
 import PiiMaskButton from '../../../../components/PiiMaskButton';
+import ProofreadingToolbar from '../../../../components/ProofreadingToolbar';
 import SubtitleHistoryModal from '../../../../components/SubtitleHistoryModal';
 import TranscriptStatusBadge from '../../../../components/TranscriptStatusBadge';
 import VideoControls from '../../../../components/VideoControls';
@@ -362,12 +363,27 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
             </button>
           </div>
 
-          {/* PII 마스킹 버튼 */}
-          <div className="mb-2">
+          {/* 교정 도구 */}
+          <div className="mb-2 space-y-2">
             <PiiMaskButton
               meetingId={id}
               onMaskApplied={async () => {
                 // 마스킹 적용 후 자막 리로드
+                try {
+                  const resp = await apiClient<{ items: SubtitleType[] }>(
+                    `/api/meetings/${id}/subtitles?limit=1000`
+                  );
+                  const items = resp.items ?? [];
+                  setOriginalSubtitles(items);
+                  setEditedSubtitles(items);
+                  changesMap.current.clear();
+                } catch { /* ignore */ }
+              }}
+            />
+            <ProofreadingToolbar
+              meetingId={id}
+              onCorrectionsApplied={async () => {
+                // 교정 적용 후 자막 리로드
                 try {
                   const resp = await apiClient<{ items: SubtitleType[] }>(
                     `/api/meetings/${id}/subtitles?limit=1000`

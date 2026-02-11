@@ -63,11 +63,15 @@ def get_subtitle_history(
     subtitle_id: str,
 ) -> list[dict]:
     """자막의 변경 이력을 조회합니다."""
-    result = (
-        supabase.table("subtitle_history")
-        .select("*")
-        .eq("subtitle_id", subtitle_id)
-        .order("created_at", desc=True)
-        .execute()
-    )
-    return result.data
+    try:
+        result = (
+            supabase.table("subtitle_history")
+            .select("*")
+            .eq("subtitle_id", subtitle_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return result.data
+    except Exception as e:
+        logger.warning("이력 조회 실패 (subtitle_id=%s): %s", subtitle_id, e)
+        return []

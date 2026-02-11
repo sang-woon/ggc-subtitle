@@ -533,4 +533,85 @@ export async function createPublication(
   );
 }
 
+// =============================================================================
+// Phase 6B: Terminology Check + Grammar Check
+// =============================================================================
+
+// Terminology
+
+export interface TermIssue {
+  subtitle_id: string;
+  wrong_term: string;
+  correct_term: string;
+  category: string | null;
+}
+
+export interface TermCheckResult {
+  issues: TermIssue[];
+  total_issues: number;
+}
+
+export async function checkTerminology(
+  meetingId: string
+): Promise<TermCheckResult> {
+  return apiClient<TermCheckResult>(
+    `/api/meetings/${meetingId}/subtitles/check-terminology`,
+    { method: 'POST' }
+  );
+}
+
+export interface TermApplyResult {
+  updated: number;
+  items: Array<{
+    id: string;
+    original_text: string;
+    corrected_text: string;
+  }>;
+}
+
+export async function applyTerminology(
+  meetingId: string
+): Promise<TermApplyResult> {
+  return apiClient<TermApplyResult>(
+    `/api/meetings/${meetingId}/subtitles/apply-terminology`,
+    { method: 'POST' }
+  );
+}
+
+// Grammar Check (AI)
+
+export interface GrammarIssue {
+  subtitle_id: string;
+  original_text: string;
+  corrected_text: string;
+  changes: string[];
+}
+
+export interface GrammarCheckResult {
+  issues: GrammarIssue[];
+  total_issues: number;
+}
+
+export async function checkGrammar(
+  meetingId: string
+): Promise<GrammarCheckResult> {
+  return apiClient<GrammarCheckResult>(
+    `/api/meetings/${meetingId}/subtitles/check-grammar`,
+    { method: 'POST' }
+  );
+}
+
+export async function applyGrammarCorrections(
+  meetingId: string,
+  corrections: Array<{ subtitle_id: string; corrected_text: string }>
+): Promise<{ updated: number }> {
+  return apiClient<{ updated: number }>(
+    `/api/meetings/${meetingId}/subtitles/apply-grammar`,
+    {
+      method: 'POST',
+      body: JSON.stringify(corrections),
+    }
+  );
+}
+
 export default apiClient;
