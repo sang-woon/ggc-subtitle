@@ -221,6 +221,8 @@ class ChannelSttService:
         self._subtitle_counter: dict[str, int] = {}
         self._sentence_buffers: dict[str, _SentenceBuffer] = {}
         self._last_receive_time: dict[str, float] = {}
+        self._last_error: dict[str, str] = {}
+        self._reconnect_count: dict[str, int] = {}
 
     async def start(self, channel_id: str, stream_url: str) -> None:
         """채널 STT 처리를 시작합니다.
@@ -293,6 +295,8 @@ class ChannelSttService:
             "subtitle_count": subtitle_count,
             "buffer_text": buf.text[:100] if buf and buf.parts else None,
             "active_ws_rooms": list(manager.active_connections.keys()),
+            "last_error": self._last_error.get(channel_id),
+            "reconnect_count": self._reconnect_count.get(channel_id, 0),
         }
 
     async def _run_with_reconnect(
@@ -308,11 +312,14 @@ class ChannelSttService:
                 await self._run(channel_id, stream_url, parser)
                 # 정상 종료 시 재연결
                 logger.info("Channel %s: STT session ended, reconnecting...", channel_id)
+                self._last_error[channel_id] = "session_ended_normally"
                 delay = 1.0
             except asyncio.CancelledError:
                 logger.info("Channel %s: STT cancelled", channel_id)
                 return
             except Exception as e:
+                self._last_error[channel_id] = f"{type(e).__name__}: {e}"
+                self._reconnect_count[channel_id] = self._reconnect_count.get(channel_id, 0) + 1
                 logger.error("Channel %s: STT failed: %s, retrying in %.0fs", channel_id, e, delay)
 
             await asyncio.sleep(delay)
