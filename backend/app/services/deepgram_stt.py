@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import io
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import TracebackType
 from typing import TYPE_CHECKING, Self
 
@@ -53,10 +53,13 @@ class TranscriptionResult:
     Attributes:
         text: 변환된 텍스트
         confidence: 신뢰도 (0~1)
+        words: 단어별 상세 정보 리스트 (diarize 활성화 시)
+               각 항목: {word, start, end, speaker, confidence}
     """
 
     text: str
     confidence: float
+    words: list[dict] = field(default_factory=list)
 
 
 class DeepgramService:
@@ -105,6 +108,7 @@ class DeepgramService:
         apply_dictionary: bool = False,
         language: str = DEFAULT_LANGUAGE,
         content_type: str = "audio/wav",
+        diarize: bool = False,
     ) -> TranscriptionResult:
         """오디오 청크를 텍스트로 변환
 
@@ -115,6 +119,7 @@ class DeepgramService:
             apply_dictionary: 사전 후처리 적용 여부
             language: 언어 코드 (기본값: ko)
             content_type: 오디오 Content-Type (기본값: audio/wav, TS는 application/octet-stream)
+            diarize: 화자 분리 활성화 여부 (기본값: False)
 
         Returns:
             TranscriptionResult: 변환 결과
@@ -144,6 +149,7 @@ class DeepgramService:
                     smart_format=True,
                     punctuate=True,
                     content_type=content_type,
+                    diarize=diarize,
                 )
 
                 # 사전 후처리
@@ -151,6 +157,7 @@ class DeepgramService:
                     result = TranscriptionResult(
                         text=self._dictionary_service.correct(result.text),
                         confidence=result.confidence,
+                        words=result.words,
                     )
 
                 return result
@@ -192,6 +199,7 @@ class DeepgramService:
         smart_format: bool = True,
         punctuate: bool = True,
         content_type: str = "audio/wav",
+        diarize: bool = False,
     ) -> TranscriptionResult:
         """Deepgram API 호출
 
@@ -202,6 +210,7 @@ class DeepgramService:
             smart_format: 스마트 포맷팅 (숫자, 날짜 등)
             punctuate: 구두점 자동 추가
             content_type: 오디오 Content-Type (기본값: audio/wav)
+            diarize: 화자 분리 활성화 여부 (기본값: False)
 
         Returns:
             TranscriptionResult: 변환 결과
@@ -218,6 +227,10 @@ class DeepgramService:
             "smart_format": str(smart_format).lower(),
             "punctuate": str(punctuate).lower(),
         }
+
+        # diarize 활성화 시 파라미터 추가
+        if diarize:
+            params["diarize"] = "true"
 
         # keywords가 있으면 추가
         if keywords:
@@ -258,9 +271,23 @@ class DeepgramService:
             transcript = alternatives[0].get("transcript", "")
             confidence = alternatives[0].get("confidence", 0.0)
 
+            # words 배열 파싱 (diarize 활성화 시 speaker 정보 포함)
+            words_raw = alternatives[0].get("words", [])
+            words = [
+                {
+                    "word": w.get("word", ""),
+                    "start": w.get("start", 0.0),
+                    "end": w.get("end", 0.0),
+                    "confidence": w.get("confidence", 0.0),
+                    "speaker": w.get("speaker"),
+                }
+                for w in words_raw
+            ]
+
             return TranscriptionResult(
                 text=transcript,
                 confidence=confidence,
+                words=words,
             )
 
         except httpx.TimeoutException:

@@ -17,6 +17,14 @@ class MeetingStatus(str, Enum):
     ENDED = "ended"
 
 
+class TranscriptStatus(str, Enum):
+    """회의록 상태 enum"""
+
+    DRAFT = "draft"
+    REVIEWING = "reviewing"
+    FINAL = "final"
+
+
 class MeetingBase(BaseModel):
     """회의 기본 스키마"""
 
@@ -51,6 +59,8 @@ class MeetingUpdate(BaseModel):
     vod_url: Optional[str] = Field(None, description="VOD URL")
     status: Optional[MeetingStatus] = Field(None, description="회의 상태")
     duration_seconds: Optional[int] = Field(None, description="총 재생 시간 (초)")
+    meeting_type: Optional[str] = Field(None, max_length=50, description="회의 유형 (본회의, 상임위 등)")
+    committee: Optional[str] = Field(None, max_length=200, description="소속 위원회")
 
 
 class MeetingResponse(MeetingBase):
@@ -70,3 +80,90 @@ class MeetingListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+# =============================================================================
+# Participant (참석자) 스키마
+# =============================================================================
+
+
+class ParticipantCreate(BaseModel):
+    """참석자 추가 요청"""
+
+    councilor_id: str = Field(..., max_length=100, description="의원 ID")
+    name: Optional[str] = Field(None, max_length=200, description="의원 이름")
+    role: Optional[str] = Field(None, max_length=100, description="역할 (위원장, 위원 등)")
+
+
+class ParticipantResponse(BaseModel):
+    """참석자 응답"""
+
+    id: str
+    meeting_id: str
+    councilor_id: str
+    name: Optional[str] = None
+    role: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+# =============================================================================
+# Agenda (안건) 스키마
+# =============================================================================
+
+
+class AgendaCreate(BaseModel):
+    """안건 추가 요청"""
+
+    order_num: int = Field(..., ge=1, description="안건 순서")
+    title: str = Field(..., max_length=500, description="안건 제목")
+    description: Optional[str] = Field(None, description="안건 설명")
+
+
+class AgendaUpdate(BaseModel):
+    """안건 수정 요청"""
+
+    order_num: Optional[int] = Field(None, ge=1, description="안건 순서")
+    title: Optional[str] = Field(None, max_length=500, description="안건 제목")
+    description: Optional[str] = Field(None, description="안건 설명")
+
+
+class AgendaResponse(BaseModel):
+    """안건 응답"""
+
+    id: str
+    meeting_id: str
+    order_num: int
+    title: str
+    description: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+# =============================================================================
+# Transcript Status (회의록 상태) 스키마
+# =============================================================================
+
+
+class TranscriptStatusUpdate(BaseModel):
+    """회의록 상태 변경 요청"""
+
+    transcript_status: TranscriptStatus = Field(..., description="변경할 상태")
+
+
+class PublicationCreate(BaseModel):
+    """확정/공개 이력 등록 요청"""
+
+    status: TranscriptStatus = Field(..., description="상태")
+    published_by: Optional[str] = Field(None, max_length=200, description="확정자")
+    notes: Optional[str] = Field(None, description="비고")
+
+
+class PublicationResponse(BaseModel):
+    """확정/공개 이력 응답"""
+
+    id: str
+    meeting_id: str
+    status: str
+    published_by: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[str] = None

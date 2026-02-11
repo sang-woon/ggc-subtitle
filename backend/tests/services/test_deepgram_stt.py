@@ -8,6 +8,9 @@ Deepgram Nova-3 모델을 사용한 음성-텍스트 변환 서비스 테스트.
 3. test_deepgram_rate_limit_retry - rate limit 재시도
 4. test_dictionary_correction - 용어 교정
 5. test_councilor_name_correction - 의원 이름 교정
+6. test_diarize_parameter_passed - diarize 파라미터 전달
+7. test_diarize_words_in_result - diarize 응답의 words 필드 파싱
+8. test_transcription_result_words_default - words 기본값 빈 리스트
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -464,3 +467,272 @@ class TestDeepgramContextManager:
         service = DeepgramService(api_key="test-key")
         # close가 에러 없이 호출되어야 함
         await service.close()
+
+
+class TestTranscriptionResultWords:
+    """TranscriptionResult words 필드 테스트"""
+
+    def test_transcription_result_words_default_empty_list(self):
+        """words 필드 기본값은 빈 리스트"""
+        result = TranscriptionResult(text="테스트", confidence=0.95)
+        assert result.words == []
+
+    def test_transcription_result_with_words(self):
+        """words 필드에 단어 데이터 설정"""
+        words = [
+            {"word": "안녕하세요", "start": 0.0, "end": 0.5, "speaker": 0, "confidence": 0.99},
+            {"word": "오늘", "start": 0.6, "end": 0.9, "speaker": 1, "confidence": 0.97},
+        ]
+        result = TranscriptionResult(text="안녕하세요 오늘", confidence=0.98, words=words)
+        assert len(result.words) == 2
+        assert result.words[0]["speaker"] == 0
+        assert result.words[1]["speaker"] == 1
+
+    def test_transcription_result_backward_compatible(self):
+        """기존 코드와의 호환성: text, confidence만으로 생성 가능"""
+        result = TranscriptionResult(text="호환성", confidence=0.90)
+        assert result.text == "호환성"
+        assert result.confidence == 0.90
+        assert result.words == []
+
+
+class TestDiarization:
+    """Deepgram Diarization 기능 테스트"""
+
+    @pytest.fixture
+    def deepgram_service(self) -> DeepgramService:
+        """Deepgram 서비스 인스턴스"""
+        return DeepgramService(api_key="test-api-key")
+
+    @pytest.fixture
+    def mock_audio_chunk(self) -> bytes:
+        """테스트용 오디오 청크"""
+        wav_header = b"RIFF" + b"\x00" * 4 + b"WAVE" + b"fmt " + b"\x00" * 20
+        return wav_header + b"\x00" * 1000
+
+    @pytest.mark.asyncio
+    async def test_diarize_parameter_passed_to_api(
+        self, deepgram_service: DeepgramService, mock_audio_chunk: bytes
+    ):
+        """diarize=True가 _call_deepgram_api에 전달되는지 확인"""
+        with patch.object(
+            deepgram_service, "_call_deepgram_api", new_callable=AsyncMock
+        ) as mock_api:
+            mock_api.return_value = TranscriptionResult(
+                text="테스트", confidence=0.95, words=[]
+            )
+
+            await deepgram_service.transcribe(mock_audio_chunk, diarize=True)
+
+            call_args = mock_api.call_args
+            assert call_args is not None
+            assert call_args.kwargs.get("diarize") is True
+
+    @pytest.mark.asyncio
+    async def test_diarize_default_false(
+        self, deepgram_service: DeepgramService, mock_audio_chunk: bytes
+    ):
+        """diarize 기본값은 False"""
+        with patch.object(
+            deepgram_service, "_call_deepgram_api", new_callable=AsyncMock
+        ) as mock_api:
+            mock_api.return_value = TranscriptionResult(
+                text="테스트", confidence=0.95
+            )
+
+            await deepgram_service.transcribe(mock_audio_chunk)
+
+            call_args = mock_api.call_args
+            assert call_args is not None
+            assert call_args.kwargs.get("diarize") is False
+
+    @pytest.mark.asyncio
+    async def test_diarize_api_url_contains_diarize_param(
+        self, deepgram_service: DeepgramService, mock_audio_chunk: bytes
+    ):
+        """diarize=True 시 Deepgram API URL에 diarize=true 파라미터 포함"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": {
+                "channels": [
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "안녕하세요",
+                                "confidence": 0.98,
+                                "words": [
+                                    {
+                                        "word": "안녕하세요",
+                                        "start": 0.0,
+                                        "end": 0.5,
+                                        "confidence": 0.98,
+                                        "speaker": 0,
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        with patch.object(
+            deepgram_service._client, "post", new_callable=AsyncMock
+        ) as mock_post:
+            mock_post.return_value = mock_response
+
+            result = await deepgram_service._call_deepgram_api(
+                audio_chunk=mock_audio_chunk,
+                diarize=True,
+            )
+
+            # API 호출 시 params에 diarize가 포함되었는지 확인
+            call_args = mock_post.call_args
+            params = call_args.kwargs.get("params", {})
+            assert params.get("diarize") == "true"
+
+    @pytest.mark.asyncio
+    async def test_diarize_words_parsed_from_response(
+        self, deepgram_service: DeepgramService, mock_audio_chunk: bytes
+    ):
+        """diarize 응답에서 words 배열이 파싱되어 결과에 포함"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": {
+                "channels": [
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "안녕하세요 오늘 회의를 시작하겠습니다",
+                                "confidence": 0.97,
+                                "words": [
+                                    {
+                                        "word": "안녕하세요",
+                                        "start": 0.0,
+                                        "end": 0.5,
+                                        "confidence": 0.99,
+                                        "speaker": 0,
+                                    },
+                                    {
+                                        "word": "오늘",
+                                        "start": 0.6,
+                                        "end": 0.9,
+                                        "confidence": 0.97,
+                                        "speaker": 0,
+                                    },
+                                    {
+                                        "word": "회의를",
+                                        "start": 1.0,
+                                        "end": 1.4,
+                                        "confidence": 0.96,
+                                        "speaker": 1,
+                                    },
+                                    {
+                                        "word": "시작하겠습니다",
+                                        "start": 1.5,
+                                        "end": 2.2,
+                                        "confidence": 0.98,
+                                        "speaker": 1,
+                                    },
+                                ],
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        with patch.object(
+            deepgram_service._client, "post", new_callable=AsyncMock
+        ) as mock_post:
+            mock_post.return_value = mock_response
+
+            result = await deepgram_service._call_deepgram_api(
+                audio_chunk=mock_audio_chunk,
+                diarize=True,
+            )
+
+            assert len(result.words) == 4
+            assert result.words[0]["word"] == "안녕하세요"
+            assert result.words[0]["speaker"] == 0
+            assert result.words[2]["speaker"] == 1
+
+    @pytest.mark.asyncio
+    async def test_diarize_false_no_words_in_result(
+        self, deepgram_service: DeepgramService, mock_audio_chunk: bytes
+    ):
+        """diarize=False 시 words는 빈 리스트 (Deepgram이 words를 반환하지 않을 때)"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": {
+                "channels": [
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "안녕하세요",
+                                "confidence": 0.98,
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        with patch.object(
+            deepgram_service._client, "post", new_callable=AsyncMock
+        ) as mock_post:
+            mock_post.return_value = mock_response
+
+            result = await deepgram_service._call_deepgram_api(
+                audio_chunk=mock_audio_chunk,
+                diarize=False,
+            )
+
+            assert result.words == []
+
+    @pytest.mark.asyncio
+    async def test_dictionary_correction_preserves_words(
+        self, mock_audio_chunk: bytes
+    ):
+        """사전 후처리 시 words 필드가 보존되는지 확인"""
+        entries = [
+            DictionaryEntry(
+                wrong_text="경기도 의회",
+                correct_text="경기도의회",
+                category="term",
+            ),
+        ]
+        dictionary_service = DictionaryService(entries=entries)
+        service = DeepgramService(
+            api_key="test-api-key",
+            dictionary_service=dictionary_service,
+        )
+
+        words_data = [
+            {"word": "경기도", "start": 0.0, "end": 0.3, "speaker": 0, "confidence": 0.98},
+            {"word": "의회", "start": 0.4, "end": 0.7, "speaker": 0, "confidence": 0.97},
+        ]
+
+        with patch.object(
+            service, "_call_deepgram_api", new_callable=AsyncMock
+        ) as mock_api:
+            mock_api.return_value = TranscriptionResult(
+                text="경기도 의회에서 회의합니다",
+                confidence=0.95,
+                words=words_data,
+            )
+
+            result = await service.transcribe(
+                mock_audio_chunk,
+                apply_dictionary=True,
+                diarize=True,
+            )
+
+            # 사전 교정이 적용됨
+            assert "경기도의회" in result.text
+            # words 필드가 보존됨
+            assert len(result.words) == 2
+            assert result.words[0]["speaker"] == 0

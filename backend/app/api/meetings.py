@@ -3,6 +3,7 @@
 meetings 테이블이 없으면 channels 정적 데이터로 폴백합니다.
 """
 
+import asyncio
 from datetime import date
 from typing import Optional
 
@@ -11,11 +12,26 @@ from supabase import Client
 
 from app.core.channels import get_all_channels, get_channel
 from app.core.database import get_supabase
-from app.schemas.meeting import MeetingCreate, MeetingFromUrl, MeetingStatus
+from app.schemas.meeting import (
+    AgendaCreate,
+    AgendaUpdate,
+    MeetingCreate,
+    MeetingFromUrl,
+    MeetingStatus,
+    MeetingUpdate,
+    ParticipantCreate,
+    PublicationCreate,
+    TranscriptStatusUpdate,
+)
 from app.services.kms_vod_resolver import (
     is_kms_vod_url,
     resolve_kms_vod_url,
     resolve_kms_vod_metadata,
+)
+from app.services.vod_stt_service import (
+    VodSttService,
+    get_task_by_meeting,
+    is_processing,
 )
 
 
@@ -234,3 +250,373 @@ async def create_meeting(
                 detail=f"KMS VOD URL 변환 실패: {e}",
             )
     return create_meeting_service(supabase, meeting_data)
+
+
+# =============================================================================
+# VOD STT Endpoints
+# =============================================================================
+
+
+@router.post("/{meeting_id}/stt")
+async def start_stt_processing(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """VOD STT 처리를 시작합니다 (백그라운드).
+
+    - meeting이 존재하고 vod_url이 있어야 함
+    - 이미 처리 중이면 409 Conflict
+    - 즉시 task_id와 status를 반환
+    """
+    # 1. meeting 존재 확인
+    meeting = get_meeting_by_id_service(supabase, meeting_id)
+    if meeting is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    # 2. vod_url 필수 체크
+    vod_url = meeting.get("vod_url")
+    if not vod_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="VOD URL이 없는 회의입니다. 먼저 VOD URL을 등록해주세요.",
+        )
+
+    # 3. 중복 처리 방지
+    if is_processing(meeting_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="이미 STT 처리가 진행 중입니다.",
+        )
+
+    # 4. 백그라운드 태스크 실행
+    service = VodSttService()
+    asyncio.create_task(service.process(meeting_id, vod_url, supabase))
+
+    # 5. 즉시 응답 (태스크가 아직 등록 안됐을 수 있으므로 짧은 대기)
+    await asyncio.sleep(0.05)
+    task = get_task_by_meeting(meeting_id)
+    return {
+        "task_id": task.task_id if task else None,
+        "meeting_id": meeting_id,
+        "status": task.status if task else "pending",
+        "message": "STT 처리가 시작되었습니다.",
+    }
+
+
+@router.get("/{meeting_id}/stt/status")
+async def get_stt_status(
+    meeting_id: str,
+) -> dict:
+    """VOD STT 처리 상태를 조회합니다."""
+    task = get_task_by_meeting(meeting_id)
+
+    if task is None:
+        return {
+            "meeting_id": meeting_id,
+            "status": "none",
+            "progress": 0.0,
+            "message": "STT 처리 기록이 없습니다.",
+            "error": None,
+        }
+
+    return {
+        "task_id": task.task_id,
+        "meeting_id": task.meeting_id,
+        "status": task.status,
+        "progress": task.progress,
+        "message": task.message,
+        "error": task.error,
+    }
+
+
+# =============================================================================
+# Meeting Update (PATCH)
+# =============================================================================
+
+
+@router.patch("/{meeting_id}")
+async def update_meeting(
+    meeting_id: str,
+    body: MeetingUpdate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의 정보를 수정합니다 (meeting_type, committee 등)."""
+    update_data = body.model_dump(exclude_none=True)
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="수정할 필드가 없습니다.",
+        )
+
+    # date → isoformat 변환
+    if "meeting_date" in update_data:
+        update_data["meeting_date"] = update_data["meeting_date"].isoformat()
+    if "status" in update_data:
+        update_data["status"] = update_data["status"].value
+
+    result = (
+        supabase.table("meetings")
+        .update(update_data)
+        .eq("id", meeting_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    return result.data[0]
+
+
+# =============================================================================
+# Participants CRUD
+# =============================================================================
+
+
+@router.get("/{meeting_id}/participants")
+async def get_participants(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> list[dict]:
+    """회의 참석자 목록을 조회합니다."""
+    result = (
+        supabase.table("meeting_participants")
+        .select("*")
+        .eq("meeting_id", meeting_id)
+        .order("created_at")
+        .execute()
+    )
+    return result.data
+
+
+@router.post("/{meeting_id}/participants", status_code=status.HTTP_201_CREATED)
+async def add_participant(
+    meeting_id: str,
+    body: ParticipantCreate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의 참석자를 추가합니다."""
+    # 회의 존재 확인
+    meeting = get_meeting_by_id_service(supabase, meeting_id)
+    if meeting is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    data = {
+        "meeting_id": meeting_id,
+        "councilor_id": body.councilor_id,
+        "name": body.name,
+        "role": body.role,
+    }
+
+    try:
+        result = supabase.table("meeting_participants").insert(data).execute()
+    except Exception as e:
+        if "unique" in str(e).lower() or "duplicate" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 등록된 참석자입니다.",
+            )
+        raise
+
+    return result.data[0]
+
+
+@router.delete("/{meeting_id}/participants/{participant_id}")
+async def remove_participant(
+    meeting_id: str,
+    participant_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의 참석자를 제거합니다."""
+    result = (
+        supabase.table("meeting_participants")
+        .delete()
+        .eq("id", participant_id)
+        .eq("meeting_id", meeting_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="참석자를 찾을 수 없습니다.",
+        )
+
+    return {"deleted": True}
+
+
+# =============================================================================
+# Agendas CRUD
+# =============================================================================
+
+
+@router.get("/{meeting_id}/agendas")
+async def get_agendas(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> list[dict]:
+    """회의 안건 목록을 조회합니다."""
+    result = (
+        supabase.table("meeting_agendas")
+        .select("*")
+        .eq("meeting_id", meeting_id)
+        .order("order_num")
+        .execute()
+    )
+    return result.data
+
+
+@router.post("/{meeting_id}/agendas", status_code=status.HTTP_201_CREATED)
+async def add_agenda(
+    meeting_id: str,
+    body: AgendaCreate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """안건을 추가합니다."""
+    meeting = get_meeting_by_id_service(supabase, meeting_id)
+    if meeting is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    data = {
+        "meeting_id": meeting_id,
+        "order_num": body.order_num,
+        "title": body.title,
+        "description": body.description,
+    }
+    result = supabase.table("meeting_agendas").insert(data).execute()
+    return result.data[0]
+
+
+@router.patch("/{meeting_id}/agendas/{agenda_id}")
+async def update_agenda(
+    meeting_id: str,
+    agenda_id: str,
+    body: AgendaUpdate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """안건을 수정합니다."""
+    update_data = body.model_dump(exclude_none=True)
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="수정할 필드가 없습니다.",
+        )
+
+    result = (
+        supabase.table("meeting_agendas")
+        .update(update_data)
+        .eq("id", agenda_id)
+        .eq("meeting_id", meeting_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="안건을 찾을 수 없습니다.",
+        )
+
+    return result.data[0]
+
+
+@router.delete("/{meeting_id}/agendas/{agenda_id}")
+async def delete_agenda(
+    meeting_id: str,
+    agenda_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """안건을 삭제합니다."""
+    result = (
+        supabase.table("meeting_agendas")
+        .delete()
+        .eq("id", agenda_id)
+        .eq("meeting_id", meeting_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="안건을 찾을 수 없습니다.",
+        )
+
+    return {"deleted": True}
+
+
+# =============================================================================
+# Transcript Status + Publications (P6-3: T10)
+# =============================================================================
+
+
+@router.patch("/{meeting_id}/transcript-status")
+async def update_transcript_status(
+    meeting_id: str,
+    body: TranscriptStatusUpdate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의록 상태를 변경합니다 (draft → reviewing → final)."""
+    result = (
+        supabase.table("meetings")
+        .update({"transcript_status": body.transcript_status.value})
+        .eq("id", meeting_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    return result.data[0]
+
+
+@router.post("/{meeting_id}/publications", status_code=status.HTTP_201_CREATED)
+async def create_publication(
+    meeting_id: str,
+    body: PublicationCreate,
+    supabase: Client = Depends(get_supabase),
+) -> dict:
+    """회의록 확정/공개 이력을 등록합니다."""
+    meeting = get_meeting_by_id_service(supabase, meeting_id)
+    if meeting is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting {meeting_id}을(를) 찾을 수 없습니다.",
+        )
+
+    data = {
+        "meeting_id": meeting_id,
+        "status": body.status.value,
+        "published_by": body.published_by,
+        "notes": body.notes,
+    }
+    result = supabase.table("transcript_publications").insert(data).execute()
+    return result.data[0]
+
+
+@router.get("/{meeting_id}/publications")
+async def get_publications(
+    meeting_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> list[dict]:
+    """회의록 확정/공개 이력을 조회합니다."""
+    result = (
+        supabase.table("transcript_publications")
+        .select("*")
+        .eq("meeting_id", meeting_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data

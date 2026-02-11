@@ -126,6 +126,13 @@ function LivePageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, _setCurrentTime] = useState<number | undefined>(undefined);
 
+  // 실시간 자막 클릭 안내 토스트
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // STT 시작 시각 추정 (시계 시간 표시용)
+  const sttStartedAtRef = useRef<number | null>(null);
+
   // 채널 목록 (방송 상태 포함)
   const {
     channels,
@@ -257,6 +264,32 @@ function LivePageContent() {
       // STT stop은 호출하지 않음 - 서버의 AutoSttManager가 방송 종료 시 자동 중지
     };
   }, [activeChannelId, isOnAir]);
+
+  // 자막이 수신되면 STT 시작 시각을 추정
+  useEffect(() => {
+    if (subtitles.length > 0 && !sttStartedAtRef.current) {
+      const latest = subtitles[subtitles.length - 1]!;
+      sttStartedAtRef.current = Date.now() - latest.start_time * 1000;
+    }
+  }, [subtitles]);
+
+  // 채널 변경 시 STT 시작 시각 리셋
+  useEffect(() => {
+    sttStartedAtRef.current = null;
+  }, [activeChannelId]);
+
+  // 토스트 정리
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    };
+  }, []);
+
+  const handleLiveClickNotice = useCallback(() => {
+    setLiveNotice('실시간 방송에서는 시점 이동이 지원되지 않습니다');
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => setLiveNotice(null), 3000);
+  }, []);
 
   const handleHlsError = useCallback((err: Error) => {
     console.error('HLS Error:', err);
@@ -453,8 +486,18 @@ function LivePageContent() {
               currentTime={currentTime}
               onSubtitleClick={handleSubtitleClick}
               interimText={interimText}
+              isLive
+              sttStartedAt={sttStartedAtRef.current}
+              onLiveClickNotice={handleLiveClickNotice}
             />
           </div>
+
+          {/* 실시간 자막 클릭 안내 토스트 */}
+          {liveNotice && (
+            <div className="mt-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 text-center animate-fade-in">
+              {liveNotice}
+            </div>
+          )}
         </div>
       </main>
     </div>
