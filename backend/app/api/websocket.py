@@ -131,6 +131,41 @@ class ConnectionManager:
             for websocket in disconnected:
                 self.disconnect(websocket, room_id)
 
+    async def broadcast_corrected_subtitle(
+        self, room_id: str, correction_data: dict[str, Any]
+    ) -> None:
+        """교정된 자막을 브로드캐스트합니다.
+
+        기존 자막의 텍스트를 교정된 텍스트로 업데이트합니다.
+        히스토리에서도 해당 자막을 찾아 교정합니다.
+        """
+        # 히스토리에서 해당 자막 업데이트
+        sub_id = correction_data.get("id", "")
+        corrected_text = correction_data.get("corrected_text", "")
+        if room_id in self.subtitle_history and sub_id and corrected_text:
+            for item in self.subtitle_history[room_id]:
+                subtitle = item.get("subtitle", {})
+                if subtitle.get("id") == sub_id:
+                    subtitle["original_text"] = subtitle.get("text", "")
+                    subtitle["text"] = corrected_text
+                    subtitle["is_corrected"] = True
+                    break
+
+        message = {
+            "type": "subtitle_corrected",
+            "payload": correction_data,
+        }
+
+        if room_id in self.active_connections:
+            disconnected = []
+            for websocket in self.active_connections[room_id]:
+                try:
+                    await websocket.send_json(message)
+                except Exception:
+                    disconnected.append(websocket)
+            for websocket in disconnected:
+                self.disconnect(websocket, room_id)
+
     def clear_history(self, room_id: str) -> None:
         """특정 방의 자막 히스토리를 초기화합니다."""
         if room_id in self.subtitle_history:

@@ -83,7 +83,9 @@ class AutoSttManager:
                 await self._monitor_task
             except asyncio.CancelledError:
                 pass
-        logger.info("AutoSttManager stopped")
+        # 모든 활성 채널 STT 정리
+        await self._stt_service.stop_all()
+        logger.info("AutoSttManager stopped (all channel STT cleaned up)")
 
     async def ensure_stt_for_live_channels(self) -> list[str]:
         """방송중인데 STT가 꺼진 채널을 보정합니다.

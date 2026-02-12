@@ -15,6 +15,8 @@ export interface SubtitleItemProps {
   isLive?: boolean;
   /** 실시간 클릭 시 안내 콜백 */
   onLiveClickNotice?: () => void;
+  /** AI 교정 완료 여부 */
+  isCorrected?: boolean;
 }
 
 /**
@@ -83,6 +85,7 @@ export default function SubtitleItem({
   clockTime,
   isLive = false,
   onLiveClickNotice,
+  isCorrected = false,
 }: SubtitleItemProps) {
   const baseStyles = 'w-full text-left px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50';
   const currentStyles = isCurrent ? 'bg-blue-50 border-l-4 border-primary' : '';
@@ -122,6 +125,11 @@ export default function SubtitleItem({
       </span>
       <span className="block text-sm text-gray-900 leading-relaxed">
         {renderHighlightedText(text, highlightQuery)}
+        {isCorrected && (
+          <span className="inline-block ml-1 text-xs text-emerald-600" title="AI 교정됨">
+            &#10003;
+          </span>
+        )}
       </span>
     </button>
   );

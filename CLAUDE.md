@@ -11,7 +11,7 @@
 | **서비스명** | 경기도의회 실시간 자막 서비스 |
 | **목적** | 의회 회의 영상에 실시간/VOD 자막 제공 |
 | **핵심 기술** | Deepgram Nova-3 STT, WebSocket, HLS 스트리밍 |
-| **상태** | Phase 0~7 완료 (실시간/VOD 자막 + 의안관리 + 교정도구 + 대조관리 + AI 요약) |
+| **상태** | Phase 0~8 완료 (실시간/VOD 자막 + 의안관리 + 교정도구 + 대조관리 + AI 요약 + 실시간 자막 교정 + Railway 안정성) |
 
 ---
 
@@ -98,6 +98,7 @@
 │   │   │   ├── pii_masking.py       # 개인정보 마스킹
 │   │   │   ├── history_tracker.py   # 자막 변경 이력 추적
 │   │   │   ├── speaker_utils.py     # 화자 식별 유틸리티
+│   │   │   ├── subtitle_corrector.py  # OpenAI 실시간 자막 교정 (배치 큐)
 │   │   │   └── auto_stt.py          # 방송 채널 자동 STT 시작
 │   │   └── tasks/             # 백그라운드 태스크
 │   ├── tests/                 # pytest 테스트
@@ -334,6 +335,10 @@ fields:
 - **문법 검사**: 한국어 맞춤법, 띄어쓰기, 조사 검사 → GrammarIssue 반환
 - **회의 요약**: 자막 분석 → summary_text, agenda_summaries, key_decisions, action_items
 - **용어 점검**: 의회 용어 사전 기반 일관성 검사 + 자동 교정
+- **실시간 자막 교정** (Phase 8): STT 결과를 배치 큐로 수집 → GPT-4o-mini로 교정 → WebSocket `subtitle_corrected` 이벤트 전송
+  - 3개 자막씩 10초 간격 배치 처리
+  - 의회 전문 용어, 의원명, 숫자 보정에 특화
+  - 실시간 오버레이는 빠르게 표시, 등록된 자막은 비동기 교정
 
 ### 대조관리 워크플로우 (Phase 7)
 - verification_status: `unverified` → `verified` / `flagged`
@@ -345,6 +350,13 @@ fields:
 - 단일 경로 `/ws/meetings/{meeting_id}/subtitles` (`str` 타입)
 - UUID와 채널 ID (예: "ch8") 모두 지원
 - `uuid.UUID` 타입 사용 금지 (Starlette가 403 반환)
+- 이벤트 타입: `subtitle_created`, `subtitle_interim`, `subtitle_corrected`
+
+### Railway 안정성 (Phase 8)
+- **Self-ping 헬스체크**: 5분 간격으로 자기 자신 `/health` 호출 (App Sleeping 방지)
+  - PORT 환경변수가 있을 때만 활성화 (Railway 환경 전용)
+- **stop_all() 정리**: AutoSttManager.stop() 시 모든 활성 채널 STT를 일괄 중지
+- **SubtitleCorrector 생명주기**: lifespan에서 start/stop 관리
 
 ---
 
@@ -451,6 +463,7 @@ cd frontend && npx jest && cd ../backend && python -m pytest
 - [x] Phase 6A: 회의관리 확장 (안건, 참석자, 발행 워크플로우, 변경 이력)
 - [x] Phase 6B: 용어점검 + AI 문장검사 + PII 마스킹 + 교정 도구 UI
 - [x] Phase 7: 대조관리 (Verification QA) + AI 회의 요약
+- [x] Phase 8: Railway 안정성 + OpenAI 실시간 자막 교정
 
 ### 빌드 수정 이력 (2026-02-10)
 - ESLint import/order, consistent-type-imports 에러 6개 수정
@@ -458,3 +471,11 @@ cd frontend && npx jest && cd ../backend && python -m pytest
 - `useSubtitleSync` useEffect 의존성 경고 수정
 - 프론트엔드 빌드: 통과 / 백엔드: 정상 기동 (20개 라우트)
 - 테스트: 375/392 통과 (live 페이지 17개 실패 - fetch 미모킹)
+
+### Phase 8 구현 이력 (2026-02-12)
+- Railway App Sleeping 방지: self-ping 헬스체크 백그라운드 태스크 추가
+- AutoSttManager.stop() 개선: stop_all() 메서드 추가로 완전한 정리
+- SubtitleCorrectorService 신규: OpenAI GPT-4o-mini 배치 큐 교정
+- WebSocket `subtitle_corrected` 이벤트 추가 (프론트엔드 연동)
+- 프론트엔드 교정 UI: SubtitleItem에 교정 체크마크 표시
+- 테스트: Frontend 392/392, Backend 309/309 통과

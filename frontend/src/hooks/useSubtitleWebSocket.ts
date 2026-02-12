@@ -73,6 +73,14 @@ interface SubtitleHistoryEvent {
   };
 }
 
+interface SubtitleCorrectedEvent {
+  type: 'subtitle_corrected';
+  payload: {
+    id: string;
+    corrected_text: string;
+  };
+}
+
 interface WebSocketMessage {
   type: string;
   payload: unknown;
@@ -228,6 +236,18 @@ export function useSubtitleWebSocket(
           } else {
             addSubtitle();
           }
+        } else if (message.type === 'subtitle_corrected') {
+          // OpenAI 교정 결과 수신 → 기존 자막 텍스트 교체
+          const correctedEvent = message as SubtitleCorrectedEvent;
+          const { id, corrected_text } = correctedEvent.payload;
+
+          setSubtitles((prev) =>
+            prev.map((s) =>
+              s.id === id
+                ? { ...s, original_text: s.text, text: corrected_text, is_corrected: true }
+                : s
+            )
+          );
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);

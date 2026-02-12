@@ -131,6 +131,7 @@ const SubtitlePanel = React.memo(function SubtitlePanel({
               isLive={isLive}
               onLiveClickNotice={onLiveClickNotice}
               clockTime={sttStartedAt ? formatClockTime(sttStartedAt, subtitle.start_time) : null}
+              isCorrected={subtitle.is_corrected}
             />
           ))}
           </>

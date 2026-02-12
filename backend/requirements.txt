@@ -24,6 +24,9 @@ deepgram-sdk>=3.0.0
 # 한국어 형태소 분석 (띄어쓰기 교정)
 kiwipiepy>=0.18.0
 
+# OpenAI API (자막 교정)
+openai>=1.30.0
+
 # 개발 도구
 python-dotenv>=1.0.1
 

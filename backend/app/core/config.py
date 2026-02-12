@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     # Deepgram STT (Nova-3)
     deepgram_api_key: str = ""
 
+    # OpenAI 자막 교정
+    subtitle_correction_enabled: bool = True
+    subtitle_correction_model: str = "gpt-4o-mini"
+    subtitle_correction_batch_size: int = 3
+    subtitle_correction_interval: float = 10.0  # 초
+
     # CORS
     cors_origins: list[str] = [
         "http://localhost:3000",

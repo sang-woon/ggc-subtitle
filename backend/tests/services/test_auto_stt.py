@@ -27,6 +27,7 @@ def mock_stt_service():
     service = MagicMock()
     service.start = AsyncMock()
     service.stop = AsyncMock()
+    service.stop_all = AsyncMock()
     service.is_running = MagicMock(return_value=False)
     return service
 

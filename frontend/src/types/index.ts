@@ -24,6 +24,10 @@ export interface SubtitleType {
   speaker: string | null;
   confidence: number | null;
   created_at: string;
+  /** 원본 텍스트 (교정 전). 교정된 경우에만 존재 */
+  original_text?: string;
+  /** AI 교정 완료 여부 */
+  is_corrected?: boolean;
 }
 
 export interface ApiResponse<T> {

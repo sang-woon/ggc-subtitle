@@ -30,6 +30,7 @@ from kiwipiepy import Kiwi
 from app.api.websocket import manager
 from app.core.config import settings
 from app.services.dictionary import get_default_dictionary
+from app.services.subtitle_corrector import get_subtitle_corrector
 from app.services.hls_parser import HlsPlaylistParser
 from app.services.speaker_utils import group_words_by_speaker
 
@@ -215,6 +216,13 @@ class ChannelSttService:
         # 자막 히스토리 정리 (방송 종료 시 이전 자막 초기화)
         manager.clear_history(channel_id)
         logger.info("Stopped STT for channel %s", channel_id)
+
+    async def stop_all(self) -> None:
+        """모든 활성 채널 STT를 중지합니다."""
+        channel_ids = list(self._active_tasks.keys())
+        for channel_id in channel_ids:
+            await self.stop(channel_id)
+        logger.info("Stopped all STT channels (%d)", len(channel_ids))
 
     def is_running(self, channel_id: str) -> bool:
         """채널 STT가 실행 중인지 확인합니다."""
@@ -540,6 +548,16 @@ class ChannelSttService:
         )
 
         await manager.broadcast_subtitle(channel_id, subtitle_data)
+
+        # OpenAI 자막 교정 큐에 추가 (비동기, 논블로킹)
+        corrector = get_subtitle_corrector()
+        if corrector.enabled:
+            await corrector.enqueue(
+                subtitle_id=subtitle_data["subtitle"]["id"],
+                channel_id=channel_id,
+                text=spaced_text,
+                speaker=speaker_label,
+            )
 
     async def _send_keepalive(
         self,

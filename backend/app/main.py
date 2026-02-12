@@ -1,7 +1,11 @@
 """FastAPI 애플리케이션 진입점"""
 
+import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
+
+import httpx
 
 # 애플리케이션 로거 설정 (uvicorn 기본 로깅에 app.* 포함)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
@@ -19,8 +23,23 @@ from app.api.subtitles import router as subtitles_router
 from app.api.websocket import router as websocket_router
 from app.core.config import settings
 from app.services.auto_stt import get_auto_stt_manager
+from app.services.subtitle_corrector import get_subtitle_corrector
 
 logger = logging.getLogger(__name__)
+
+
+async def _self_ping() -> None:
+    """Railway App Sleeping 방지를 위한 자기 자신 헬스체크."""
+    port = os.environ.get("PORT", "8000")
+    url = f"http://0.0.0.0:{port}/health"
+    async with httpx.AsyncClient() as client:
+        while True:
+            await asyncio.sleep(300)  # 5분
+            try:
+                await client.get(url, timeout=10)
+                logger.debug("Self-ping OK")
+            except Exception as e:
+                logger.warning("Self-ping failed: %s", e)
 
 
 @asynccontextmanager
@@ -29,12 +48,33 @@ async def lifespan(app: FastAPI):
     # --- Startup ---
     auto_stt = get_auto_stt_manager()
     await auto_stt.start()
+
+    corrector = get_subtitle_corrector()
+    await corrector.start()
+
+    # Railway 환경에서 App Sleeping 방지용 self-ping
+    self_ping_task = None
+    if os.environ.get("PORT"):
+        self_ping_task = asyncio.create_task(_self_ping(), name="self-ping")
+        logger.info("Self-ping task started (PORT=%s)", os.environ.get("PORT"))
+
     logger.info("Application startup complete (auto_stt enabled=%s)", auto_stt.enabled)
 
     yield
 
     # --- Shutdown ---
+    if self_ping_task and not self_ping_task.done():
+        self_ping_task.cancel()
+        try:
+            await self_ping_task
+        except asyncio.CancelledError:
+            pass
+
     await auto_stt.stop()
+
+    corrector_shutdown = get_subtitle_corrector()
+    await corrector_shutdown.stop()
+
     logger.info("Application shutdown complete")
 
 
