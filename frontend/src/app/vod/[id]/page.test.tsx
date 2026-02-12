@@ -19,6 +19,11 @@ jest.mock('../../../lib/api', () => ({
   __esModule: true,
   default: (...args: unknown[]) => mockApiClient(...args),
   apiClient: (...args: unknown[]) => mockApiClient(...args),
+  startSttProcessing: jest.fn().mockRejectedValue(new Error('not available')),
+  getSttStatus: jest.fn().mockRejectedValue(new Error('not available')),
+  getVerificationStats: jest.fn().mockRejectedValue(new Error('not available')),
+  ApiError: class ApiError extends Error { status: number; constructor(m: string, s: number) { super(m); this.status = s; } },
+  API_BASE_URL: 'http://localhost:8000',
 }));
 
 describe('VodViewerPage', () => {
@@ -66,7 +71,7 @@ describe('VodViewerPage', () => {
         return Promise.resolve(mockMeeting);
       }
       if (endpoint === '/api/meetings/vod-1/subtitles') {
-        return Promise.resolve(mockSubtitles);
+        return Promise.resolve({ items: mockSubtitles });
       }
       return Promise.reject(new Error('Unknown endpoint'));
     });

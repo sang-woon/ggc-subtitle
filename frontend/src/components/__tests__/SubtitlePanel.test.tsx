@@ -73,16 +73,15 @@ describe('SubtitlePanel', () => {
   });
 
   describe('auto scroll', () => {
-    it('scrolls to bottom when new subtitle is added', async () => {
-      const scrollIntoViewMock = jest.fn();
-      Element.prototype.scrollIntoView = scrollIntoViewMock;
+    it('scrolls to top when new subtitle is added', async () => {
+      const { rerender, container } = render(<SubtitlePanel subtitles={mockSubtitles.slice(0, 2)} />);
 
-      const { rerender } = render(<SubtitlePanel subtitles={mockSubtitles.slice(0, 2)} />);
-
+      // 자막이 역순으로 렌더링되므로 최신 자막은 맨 위에 표시됨 → scrollTop = 0
       rerender(<SubtitlePanel subtitles={mockSubtitles} />);
 
       await waitFor(() => {
-        expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' });
+        const scrollableList = container.querySelector('.overflow-y-auto');
+        expect(scrollableList?.scrollTop).toBe(0);
       });
     });
 

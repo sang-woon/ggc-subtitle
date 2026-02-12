@@ -7,10 +7,13 @@ const mockAttachMedia = jest.fn();
 const mockLoadSource = jest.fn();
 const mockDestroy = jest.fn();
 const mockOn = jest.fn();
+const mockStartLoad = jest.fn();
+const mockRecoverMediaError = jest.fn();
 
 jest.mock('hls.js', () => {
   const Events = {
     MANIFEST_PARSED: 'hlsManifestParsed',
+    FRAG_BUFFERED: 'hlsFragBuffered',
     ERROR: 'hlsError',
   } as const;
 
@@ -31,6 +34,9 @@ jest.mock('hls.js', () => {
       loadSource = mockLoadSource;
       destroy = mockDestroy;
       on = mockOn;
+      startLoad = mockStartLoad;
+      recoverMediaError = mockRecoverMediaError;
+      liveSyncPosition = 0;
     },
   };
 });
@@ -42,6 +48,8 @@ describe('HlsPlayer', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // JSDOM의 HTMLMediaElement.play()는 Promise를 반환하지 않으므로 모킹 필요
+    HTMLMediaElement.prototype.play = jest.fn().mockResolvedValue(undefined);
   });
 
   describe('rendering', () => {
@@ -221,7 +229,8 @@ describe('HlsPlayer', () => {
 
       mockOn.mockImplementation((event, handler) => {
         if (event === 'hlsError') {
-          setTimeout(() => handler(null, { fatal: true, type: 'networkError' }), 0);
+          // 네트워크/미디어 외의 에러 타입 → default case에서 즉시 onError 호출
+          setTimeout(() => handler(null, { fatal: true, type: 'otherError' }), 0);
         }
       });
 

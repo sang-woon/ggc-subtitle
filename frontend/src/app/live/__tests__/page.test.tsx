@@ -105,7 +105,7 @@ describe('LivePage', () => {
     mockUseSubtitleWebSocket.mockReturnValue(defaultWebSocketReturn);
     mockUseChannelStatus.mockReturnValue({
       channels: [
-        { id: 'ch14', name: '본회의', code: 'A011', stream_url: 'https://example.com/ch14/playlist.m3u8' },
+        { id: 'ch14', name: '본회의', code: 'A011', stream_url: 'https://example.com/ch14/playlist.m3u8', livestatus: 1 },
       ],
       isLoading: false,
       error: null,
@@ -373,7 +373,9 @@ describe('LivePage', () => {
 
       render(<LivePage />);
 
-      expect(screen.getByText('테스트 자막입니다.')).toBeInTheDocument();
+      // SubtitleOverlay + SubtitlePanel 양쪽에서 렌더링됨
+      const matches = screen.getAllByText('테스트 자막입니다.');
+      expect(matches.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
