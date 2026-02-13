@@ -46,6 +46,12 @@ export const NAV_MODULES: NavModule[] = [
         requiresMeeting: true,
         getHref: (meetingId) => `/vod/${meetingId}`,
       },
+      {
+        id: 'minutes',
+        label: '회의록 작성',
+        requiresMeeting: true,
+        getHref: (meetingId) => `/vod/${meetingId}/minutes`,
+      },
     ],
   },
   {
