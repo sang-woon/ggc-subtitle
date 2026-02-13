@@ -22,17 +22,72 @@ const integrationMockMeeting = {
   updated_at: '2026-02-06T00:00:00Z',
 };
 
+const mockChannels = [
+  {
+    id: 'ch1',
+    code: 'ch1',
+    name: '도청채널',
+    stream_url: 'https://test-stream.example.com/live.m3u8',
+    livestatus: 1,
+    status_text: '방송중',
+    has_schedule: true,
+    session_no: 352,
+    session_order: 1,
+    stt_running: false,
+  },
+  {
+    id: 'ch2',
+    code: 'ch2',
+    name: '휴식채널',
+    stream_url: 'https://test-stream.example.com/live-off.m3u8',
+    livestatus: 0,
+    status_text: '방송전',
+    has_schedule: false,
+    stt_running: false,
+  },
+];
+
+function getLiveChannelUrl(channelId: string = 'ch1') {
+  return `/live?channel=${channelId}`;
+}
+
+function getLiveChannelTestId(channelId: string) {
+  return `channel-${channelId}`;
+}
+
 /**
  * Helper to set up API routes with custom responses
  */
 async function setupMockApi(page: Page, config: {
   liveMeeting?: object | null;
   subtitles?: object[];
+  channels?: typeof mockChannels;
   apiDelay?: number;
 } = {}) {
-  const { liveMeeting = integrationMockMeeting, subtitles = [], apiDelay = 0 } = config;
+  const {
+    liveMeeting = integrationMockMeeting,
+    subtitles = [],
+    channels = mockChannels,
+    apiDelay = 0,
+  } = config;
 
-  await page.route('**/api/meetings/live', async (route) => {
+  await page.route('**/api/channels/status', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(channels),
+    });
+  });
+
+  await page.route('**/api/channels/*/stt/start', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'started' }),
+    });
+  });
+
+  await page.route('**/api/meetings/live*', async (route) => {
     if (apiDelay > 0) {
       await new Promise(resolve => setTimeout(resolve, apiDelay));
     }
@@ -88,8 +143,8 @@ test.describe('API Integration Tests', () => {
       await expect(page.getByText('현재 진행 중인 회의가 없습니다')).toBeVisible({ timeout: 10000 });
     });
 
-    test('should handle API error gracefully', async ({ page }) => {
-      await page.route('**/api/meetings/live', async (route) => {
+  test('should handle API error gracefully', async ({ page }) => {
+    await page.route('**/api/meetings/live*', async (route) => {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -111,10 +166,10 @@ test.describe('API Integration Tests', () => {
       await expect(page.getByText(/오류가 발생했습니다|데이터를 불러오는 중 오류/)).toBeVisible({ timeout: 10000 });
     });
 
-    test('should retry on network failure (SWR behavior)', async ({ page }) => {
+  test('should retry on network failure (SWR behavior)', async ({ page }) => {
       let requestCount = 0;
 
-      await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
         requestCount++;
         if (requestCount === 1) {
           // First request fails
@@ -160,7 +215,7 @@ test.describe('API Integration Tests', () => {
     ];
 
     test('should fetch and display VOD list', async ({ page }) => {
-      await page.route('**/api/meetings/live', async (route) => {
+      await page.route('**/api/meetings/live*', async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -186,7 +241,7 @@ test.describe('API Integration Tests', () => {
     });
 
     test('should handle empty VOD list', async ({ page }) => {
-      await page.route('**/api/meetings/live', async (route) => {
+      await page.route('**/api/meetings/live*', async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -216,7 +271,7 @@ test.describe('API Integration Tests', () => {
 test.describe('WebSocket Integration Tests', () => {
   test('should display connection status indicator', async ({ page }) => {
     await setupMockApi(page, { liveMeeting: integrationMockMeeting });
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Connection status should be visible
     await expect(page.getByTestId('connection-status')).toBeVisible({ timeout: 10000 });
@@ -224,7 +279,7 @@ test.describe('WebSocket Integration Tests', () => {
 
   test('should show connecting state initially', async ({ page }) => {
     await setupMockApi(page, { liveMeeting: integrationMockMeeting });
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Wait for page to load
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
@@ -236,7 +291,7 @@ test.describe('WebSocket Integration Tests', () => {
 
   test('should have reconnect button when disconnected', async ({ page }) => {
     await setupMockApi(page, { liveMeeting: integrationMockMeeting });
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Wait for page to load
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
@@ -266,8 +321,11 @@ test.describe('Data Flow Integration', () => {
 
     // Navigate to live page
     await page.getByRole('button', { name: /실시간 자막 보기/i }).click();
+    await expect(page).toHaveURL('/live');
+    await page.getByTestId(getLiveChannelTestId('ch1')).click();
 
     // Verify data flows to Header on live page
+    await expect(page).toHaveURL('/live?channel=ch1');
     await expect(page.getByText('커스텀 데이터 흐름 테스트 회의')).toBeVisible();
   });
 
@@ -280,7 +338,10 @@ test.describe('Data Flow Integration', () => {
 
     // Go to live
     await page.getByRole('button', { name: /실시간 자막 보기/i }).click();
+    await expect(page).toHaveURL('/live');
+    await page.getByTestId(getLiveChannelTestId('ch1')).click();
     await expect(page.getByTestId('live-page')).toBeVisible();
+    await expect(page).toHaveURL('/live?channel=ch1');
     await expect(page.getByText('통합 테스트 회의')).toBeVisible();
 
     // Go back
@@ -322,8 +383,8 @@ test.describe('URL State Integration', () => {
   test('should handle direct navigation to /live', async ({ page }) => {
     await setupMockApi(page, { liveMeeting: integrationMockMeeting });
 
-    // Go directly to /live
-    await page.goto('/live');
+    // Go directly to channel-based live view
+    await page.goto(getLiveChannelUrl());
 
     // Should load live page correctly
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
@@ -333,8 +394,8 @@ test.describe('URL State Integration', () => {
   test('should handle page refresh on /live', async ({ page }) => {
     await setupMockApi(page, { liveMeeting: integrationMockMeeting });
 
-    // Go to /live
-    await page.goto('/live');
+    // Go to channel-based live view
+    await page.goto(getLiveChannelUrl());
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
     // Refresh

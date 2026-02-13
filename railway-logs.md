@@ -1,0 +1,1066 @@
+- generic [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - banner [ref=e7]:
+        - generic [ref=e8]:
+          - link "Railway Logo" [ref=e1365] [cursor=pointer]:
+            - /url: /dashboard
+            - img "Railway Logo" [ref=e1366]
+          - generic [ref=e367]:
+            - generic "sang-woon's Projects" [ref=e1367]
+            - button "zesty-ambition" [ref=e1368] [cursor=pointer]:
+              - generic [ref=e374]: zesty-ambition
+              - img [ref=e376]
+            - button "production" [ref=e1369] [cursor=pointer]:
+              - generic [ref=e381]: production
+              - img [ref=e383]
+        - button "Open mobile navigation" [ref=e1370] [cursor=pointer]
+      - generic [ref=e387]:
+        - link "Architecture" [ref=e1373] [cursor=pointer]:
+          - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+        - link "Observability" [ref=e1374] [cursor=pointer]:
+          - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/observability?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+        - link "Logs" [ref=e1375] [cursor=pointer]:
+          - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/logs?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+        - link "Settings" [ref=e1376] [cursor=pointer]:
+          - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/settings?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+    - region [ref=e393]:
+      - generic [ref=e466]:
+        - generic [ref=e468]:
+          - generic [ref=e469]:
+            - generic [ref=e470]:
+              - generic [ref=e471]:
+                - button [ref=e472] [cursor=pointer]:
+                  - img [ref=e474]
+                - heading [level=1] [ref=e2342]:
+                  - button [ref=e2343] [cursor=pointer]: ggc-subtitle
+              - link [ref=e479] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                - img [ref=e481]
+            - generic [ref=e483]:
+              - link [ref=e2344] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                - generic [ref=e485]: Deployments
+              - link [ref=e2345] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4/variables?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                - generic [ref=e487]: Variables
+              - link [ref=e2346] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4/metrics?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                - generic [ref=e489]: Metrics
+              - link [ref=e2347] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4/settings?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                - generic [ref=e491]: Settings
+          - generic [ref=e2040]:
+            - generic [ref=e2041]:
+              - generic [ref=e2042]:
+                - img [ref=e2044]
+                - link [ref=e2348] [cursor=pointer]:
+                  - /url: https://ggc-subtitle-production.up.railway.app
+                  - text: ggc-subtitle-production.up.railway.app
+              - generic [ref=e2048]:
+                - generic [ref=e2273]:
+                  - img [ref=e2349]
+                  - text: python@3.11.11
+                - generic [ref=e2049]:
+                  - img [ref=e2051]
+                  - link [ref=e2350] [cursor=pointer]:
+                    - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4/settings?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e#deploy-region-config
+                    - text: europe-west4-drams3a
+                - generic [ref=e2055]:
+                  - img [ref=e2057]
+                  - link [ref=e2351] [cursor=pointer]:
+                    - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4/settings?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e#deploy-region-config
+                    - text: 1 Replica
+            - generic [ref=e2061]:
+              - link [ref=e2352] [cursor=pointer]:
+                - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=7692b6f7-bc2b-4f02-acdd-38a4e10fa743#deploy
+                - generic [ref=e2063]:
+                  - generic [ref=e2064]:
+                    - generic [ref=e2066]: Active
+                    - img [ref=e2071]
+                    - generic [ref=e2073]:
+                      - paragraph [ref=e2074]: "feat: Phase 4 - 채널 시스템, STT 파이프라인, KMS VOD 변환 Backend: - 18개 HLS 채널 정적 설정 및 API (channels.py) - 채널 방송 상태 실시간 조회 + SSE 스트림 (channel_status.py) - Deepgram Streaming WebSocket STT 파이프라인 (channel_stt.py) - HLS 마스터/미디어 플레이리스트 2단계 파싱 (hls_parser.py) - 방송중 채널 자동 STT 시작/중지 (auto_stt.py) - KMS VOD URL → MP4 자동 변환 (kms_vod_resolver.py) - Supabase REST API로 DB 접근 단순화 (database.py) - meetings/subtitles/websocket API 리팩터링 Frontend: - ChannelSelector: 18개 채널 선택 + 방송 상태 표시 - SubtitleOverlay: 영상 위 자막 오버레이 - useChannels, useChannelStatus: 채널 데이터/SSE 훅 - /live 페이지: 채널 기반 실시간 뷰어로 전환 - HlsPlayer 채널 연동, SubtitlePanel/Item 개선 - VodRegisterModal KMS URL 지원 - 타입 정의 및 barrel export 추가 Docs: - CLAUDE.md, README.md Phase 4 반영 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+                      - paragraph [ref=e2075]:
+                        - time [ref=e2076]: 3 minutes ago
+                        - text: via GitHub
+                  - generic [ref=e2077]:
+                    - button [ref=e2353]:
+                      - img [ref=e2080]
+                    - link [active] [ref=e2354]:
+                      - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=7692b6f7-bc2b-4f02-acdd-38a4e10fa743#deploy
+                      - generic [ref=e2085]: View logs
+              - button [ref=e2355] [cursor=pointer]:
+                - generic [ref=e2282]:
+                  - img [ref=e2284]
+                  - paragraph [ref=e2287]: Deployment successful
+                - img [ref=e2109]
+            - generic [ref=e2163]:
+              - button [expanded] [ref=e2356] [cursor=pointer]:
+                - img [ref=e2166]
+                - paragraph [ref=e2168]: History
+              - region [ref=e2357]:
+                - link [ref=e2358] [cursor=pointer]:
+                  - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=a98dc8ff-ae9a-4263-be6e-a949144270b6
+                  - generic [ref=e2290]:
+                    - generic [ref=e2291]:
+                      - generic [ref=e2293]: Removed
+                      - img [ref=e2298]
+                      - generic [ref=e2300]:
+                        - paragraph [ref=e2301]: "feat: Phase 4 - 채널 시스템, STT 파이프라인, KMS VOD 변환 Backend: - 18개 HLS 채널 정적 설정 및 API (channels.py) - 채널 방송 상태 실시간 조회 + SSE 스트림 (channel_status.py) - Deepgram Streaming WebSocket STT 파이프라인 (channel_stt.py) - HLS 마스터/미디어 플레이리스트 2단계 파싱 (hls_parser.py) - 방송중 채널 자동 STT 시작/중지 (auto_stt.py) - KMS VOD URL → MP4 자동 변환 (kms_vod_resolver.py) - Supabase REST API로 DB 접근 단순화 (database.py) - meetings/subtitles/websocket API 리팩터링 Frontend: - ChannelSelector: 18개 채널 선택 + 방송 상태 표시 - SubtitleOverlay: 영상 위 자막 오버레이 - useChannels, useChannelStatus: 채널 데이터/SSE 훅 - /live 페이지: 채널 기반 실시간 뷰어로 전환 - HlsPlayer 채널 연동, SubtitlePanel/Item 개선 - VodRegisterModal KMS URL 지원 - 타입 정의 및 barrel export 추가 Docs: - CLAUDE.md, README.md Phase 4 반영 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+                        - paragraph [ref=e2302]:
+                          - time [ref=e2303]: 4 minutes ago
+                          - text: via GitHub
+                    - generic [ref=e2304]:
+                      - button [ref=e2359]:
+                        - img [ref=e2307]
+                      - link [ref=e2360]:
+                        - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=a98dc8ff-ae9a-4263-be6e-a949144270b6#deploy
+                        - generic [ref=e2313]: View logs
+                - link [ref=e2361] [cursor=pointer]:
+                  - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=f73563bb-c03c-4e90-981d-45498e009087
+                  - generic [ref=e2316]:
+                    - generic [ref=e2317]:
+                      - generic [ref=e2319]: Failed
+                      - img [ref=e2324]
+                      - generic [ref=e2326]:
+                        - paragraph [ref=e2327]: "fix: CORS 오류 시 비디오 재생 중단 방지 - audio capture 실패 시 비디오 재생 계속되도록 try-catch 추가 - useLiveSession cleanup effect 의존성 수정 (role cycling 방지) - HTTP 배치 모드 간격 5초 → 2초로 단축 (실시간성 개선) - 생중계용 synthetic midx 생성 (hashCode 함수 추가) Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+                        - paragraph [ref=e2328]:
+                          - time [ref=e2329]: 5 minutes ago
+                          - text: via GitHub
+                    - generic [ref=e2330]:
+                      - button [ref=e2363]:
+                        - img [ref=e2333]
+                      - link [ref=e2364]:
+                        - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&id=f73563bb-c03c-4e90-981d-45498e009087#build
+                        - generic [ref=e2339]: View logs
+        - generic [ref=e2367]:
+          - generic [ref=e2368]:
+            - generic [ref=e2369]:
+              - generic [ref=e2370]:
+                - generic [ref=e2371]:
+                  - link "ggc-subtitle" [ref=e2372] [cursor=pointer]:
+                    - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                    - img [ref=e2374]
+                    - generic [ref=e2376]: ggc-subtitle
+                  - generic [ref=e2377]: /
+                  - button "7692b6f7" [ref=e2378] [cursor=pointer]
+                  - generic [ref=e2379]: Active
+                - button "Deployment actions" [ref=e2380] [cursor=pointer]:
+                  - img [ref=e2382]
+              - generic [ref=e2386]:
+                - time [ref=e2387]: Feb 10, 2026, 3:40 PM GMT+9
+                - link [ref=e2388] [cursor=pointer]:
+                  - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/service/22f6dcd6-5f34-426e-89b1-c2fd878776c4?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e
+                  - img [ref=e2390]
+            - link "ggc-subtitle-production.up.railway.app" [ref=e2394] [cursor=pointer]:
+              - /url: https://ggc-subtitle-production.up.railway.app
+          - tablist [ref=e2395]:
+            - tab "Details" [ref=e2396] [cursor=pointer]
+            - tab "Build" [ref=e2397] [cursor=pointer]
+            - tab "Deploy" [selected] [ref=e2398] [cursor=pointer]
+            - tab "HTTP" [ref=e2399] [cursor=pointer]
+            - tab "Network Flow" [ref=e2400] [cursor=pointer]
+          - tabpanel "Deploy" [ref=e2401]:
+            - generic [ref=e2402]:
+              - generic [ref=e2405]:
+                - generic [ref=e2406]:
+                  - generic:
+                    - img
+                  - generic [ref=e2407]:
+                    - generic: Filter and search logs
+                    - textbox [ref=e2408]
+                  - generic [ref=e2410]: /
+                - button "Options" [ref=e2411] [cursor=pointer]:
+                  - img [ref=e2413]
+                - link "Open in Log Explorer" [ref=e2416] [cursor=pointer]:
+                  - /url: /project/d302125c-4b4e-4069-a1cf-722030bb6a0d/logs?environmentId=6c0237f3-a8fe-4250-8437-d884e65fe35e&filter=%28%40deployment%3A7692b6f7-bc2b-4f02-acdd-38a4e10fa743%29+&start=1770705610427
+                  - img [ref=e2418]
+              - table [ref=e2422]:
+                - rowgroup [ref=e2423]:
+                  - row "Time (GMT+9) Data" [ref=e2424]:
+                    - columnheader "Time (GMT+9)" [ref=e2425]: Time (GMT+9)
+                    - columnheader "Data" [ref=e2429]: Data
+                    - columnheader [ref=e2431]:
+                      - button "Layout settings" [ref=e2432] [cursor=pointer]:
+                        - img [ref=e2434]
+                - rowgroup [ref=e2439]:
+                  - 'row "Feb 10 2026 15:42:24 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12304.ts \"HTTP/1.1 200 OK\"" [ref=e2900] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:24" [ref=e2901]:
+                      - generic [ref=e2902]:
+                        - button [ref=e2903]
+                        - button "Feb 10 2026 15:42:24" [ref=e2905]:
+                          - time [ref=e2906]: Feb 10 2026 15:42:24
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12304.ts \"HTTP/1.1 200 OK\"" [ref=e2907]':
+                      - generic [ref=e2909]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12304.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:24 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12345.ts \"HTTP/1.1 200 OK\"" [ref=e2910] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:24" [ref=e2911]:
+                      - generic [ref=e2912]:
+                        - button [ref=e2913]
+                        - button "Feb 10 2026 15:42:24" [ref=e2915]:
+                          - time [ref=e2916]: Feb 10 2026 15:42:24
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12345.ts \"HTTP/1.1 200 OK\"" [ref=e2917]':
+                      - generic [ref=e2919]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12345.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:24 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12304.ts (234060 bytes)" [ref=e2920] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:24" [ref=e2921]:
+                      - generic [ref=e2922]:
+                        - button [ref=e2923]
+                        - button "Feb 10 2026 15:42:24" [ref=e2925]:
+                          - time [ref=e2926]: Feb 10 2026 15:42:24
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12304.ts (234060 bytes)" [ref=e2927]':
+                      - generic [ref=e2929]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12304.ts (234060 bytes)"
+                  - 'row "Feb 10 2026 15:42:24 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12345.ts (253424 bytes)" [ref=e2930] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:24" [ref=e2931]:
+                      - generic [ref=e2932]:
+                        - button [ref=e2933]
+                        - button "Feb 10 2026 15:42:24" [ref=e2935]:
+                          - time [ref=e2936]: Feb 10 2026 15:42:24
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12345.ts (253424 bytes)" [ref=e2937]':
+                      - generic [ref=e2939]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12345.ts (253424 bytes)"
+                  - 'row "Feb 10 2026 15:42:25 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12305.ts \"HTTP/1.1 200 OK\"" [ref=e2940] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2941]:
+                      - generic [ref=e2942]:
+                        - button [ref=e2943]
+                        - button "Feb 10 2026 15:42:25" [ref=e2945]:
+                          - time [ref=e2946]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12305.ts \"HTTP/1.1 200 OK\"" [ref=e2947]':
+                      - generic [ref=e2949]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12305.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:25 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12346.ts \"HTTP/1.1 200 OK\"" [ref=e2950] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2951]:
+                      - generic [ref=e2952]:
+                        - button [ref=e2953]
+                        - button "Feb 10 2026 15:42:25" [ref=e2955]:
+                          - time [ref=e2956]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12346.ts \"HTTP/1.1 200 OK\"" [ref=e2957]':
+                      - generic [ref=e2959]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12346.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:25 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12305.ts (234436 bytes)" [ref=e2960] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2961]:
+                      - generic [ref=e2962]:
+                        - button [ref=e2963]
+                        - button "Feb 10 2026 15:42:25" [ref=e2965]:
+                          - time [ref=e2966]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12305.ts (234436 bytes)" [ref=e2967]':
+                      - generic [ref=e2969]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12305.ts (234436 bytes)"
+                  - 'row "Feb 10 2026 15:42:25 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12346.ts (251168 bytes)" [ref=e2970] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2971]:
+                      - generic [ref=e2972]:
+                        - button [ref=e2973]
+                        - button "Feb 10 2026 15:42:25" [ref=e2975]:
+                          - time [ref=e2976]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12346.ts (251168 bytes)" [ref=e2977]':
+                      - generic [ref=e2979]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12346.ts (251168 bytes)"
+                  - 'row "Feb 10 2026 15:42:25 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12289.ts (219396 bytes)" [ref=e2980] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2981]:
+                      - generic [ref=e2982]:
+                        - button [ref=e2983]
+                        - button "Feb 10 2026 15:42:25" [ref=e2985]:
+                          - time [ref=e2986]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12289.ts (219396 bytes)" [ref=e2987]':
+                      - generic [ref=e2989]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12289.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:25 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12299.ts (219396 bytes)" [ref=e2990] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e2991]:
+                      - generic [ref=e2992]:
+                        - button [ref=e2993]
+                        - button "Feb 10 2026 15:42:25" [ref=e2995]:
+                          - time [ref=e2996]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12299.ts (219396 bytes)" [ref=e2997]':
+                      - generic [ref=e2999]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12299.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:25 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12290.ts \"HTTP/1.1 200 OK\"" [ref=e3000] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e3001]:
+                      - generic [ref=e3002]:
+                        - button [ref=e3003]
+                        - button "Feb 10 2026 15:42:25" [ref=e3005]:
+                          - time [ref=e3006]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12290.ts \"HTTP/1.1 200 OK\"" [ref=e3007]':
+                      - generic [ref=e3009]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12290.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:25 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12300.ts \"HTTP/1.1 200 OK\"" [ref=e3010] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e3011]:
+                      - generic [ref=e3012]:
+                        - button [ref=e3013]
+                        - button "Feb 10 2026 15:42:25" [ref=e3015]:
+                          - time [ref=e3016]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12300.ts \"HTTP/1.1 200 OK\"" [ref=e3017]':
+                      - generic [ref=e3019]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12300.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:25 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12290.ts (219396 bytes)" [ref=e3020] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:25" [ref=e3021]:
+                      - generic [ref=e3022]:
+                        - button [ref=e3023]
+                        - button "Feb 10 2026 15:42:25" [ref=e3025]:
+                          - time [ref=e3026]: Feb 10 2026 15:42:25
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12290.ts (219396 bytes)" [ref=e3027]':
+                      - generic [ref=e3029]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12290.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:26 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12300.ts (219396 bytes)" [ref=e3030] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:26" [ref=e3031]:
+                      - generic [ref=e3032]:
+                        - button [ref=e3033]
+                        - button "Feb 10 2026 15:42:26" [ref=e3035]:
+                          - time [ref=e3036]: Feb 10 2026 15:42:26
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12300.ts (219396 bytes)" [ref=e3037]':
+                      - generic [ref=e3039]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12300.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:26 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12291.ts \"HTTP/1.1 200 OK\"" [ref=e3040] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:26" [ref=e3041]:
+                      - generic [ref=e3042]:
+                        - button [ref=e3043]
+                        - button "Feb 10 2026 15:42:26" [ref=e3045]:
+                          - time [ref=e3046]: Feb 10 2026 15:42:26
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12291.ts \"HTTP/1.1 200 OK\"" [ref=e3047]':
+                      - generic [ref=e3049]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12291.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:26 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12291.ts (219208 bytes)" [ref=e3050] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:26" [ref=e3051]:
+                      - generic [ref=e3052]:
+                        - button [ref=e3053]
+                        - button "Feb 10 2026 15:42:26" [ref=e3055]:
+                          - time [ref=e3056]: Feb 10 2026 15:42:26
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12291.ts (219208 bytes)" [ref=e3057]':
+                      - generic [ref=e3059]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12291.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:26 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12301.ts \"HTTP/1.1 200 OK\"" [ref=e3060] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:26" [ref=e3061]:
+                      - generic [ref=e3062]:
+                        - button [ref=e3063]
+                        - button "Feb 10 2026 15:42:26" [ref=e3065]:
+                          - time [ref=e3066]: Feb 10 2026 15:42:26
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12301.ts \"HTTP/1.1 200 OK\"" [ref=e3067]':
+                      - generic [ref=e3069]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12301.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:26 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12301.ts (219020 bytes)" [ref=e3070] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:26" [ref=e3071]:
+                      - generic [ref=e3072]:
+                        - button [ref=e3073]
+                        - button "Feb 10 2026 15:42:26" [ref=e3075]:
+                          - time [ref=e3076]: Feb 10 2026 15:42:26
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12301.ts (219020 bytes)" [ref=e3077]':
+                      - generic [ref=e3079]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12301.ts (219020 bytes)"
+                  - 'row "Feb 10 2026 15:42:31 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3080] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:31" [ref=e3081]:
+                      - generic [ref=e3082]:
+                        - button [ref=e3083]
+                        - button "Feb 10 2026 15:42:31" [ref=e3085]:
+                          - time [ref=e3086]: Feb 10 2026 15:42:31
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3087]':
+                      - generic [ref=e3089]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:31 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3090] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:31" [ref=e3091]:
+                      - generic [ref=e3092]:
+                        - button [ref=e3093]
+                        - button "Feb 10 2026 15:42:31" [ref=e3095]:
+                          - time [ref=e3096]: Feb 10 2026 15:42:31
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3097]':
+                      - generic [ref=e3099]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:31 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12308.ts \"HTTP/1.1 200 OK\"" [ref=e3100] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:31" [ref=e3101]:
+                      - generic [ref=e3102]:
+                        - button [ref=e3103]
+                        - button "Feb 10 2026 15:42:31" [ref=e3105]:
+                          - time [ref=e3106]: Feb 10 2026 15:42:31
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12308.ts \"HTTP/1.1 200 OK\"" [ref=e3107]':
+                      - generic [ref=e3109]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12308.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:32 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12349.ts \"HTTP/1.1 200 OK\"" [ref=e3110] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:32" [ref=e3111]:
+                      - generic [ref=e3112]:
+                        - button [ref=e3113]
+                        - button "Feb 10 2026 15:42:32" [ref=e3115]:
+                          - time [ref=e3116]: Feb 10 2026 15:42:32
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12349.ts \"HTTP/1.1 200 OK\"" [ref=e3117]':
+                      - generic [ref=e3119]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12349.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:32 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3120] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:32" [ref=e3121]:
+                      - generic [ref=e3122]:
+                        - button [ref=e3123]
+                        - button "Feb 10 2026 15:42:32" [ref=e3125]:
+                          - time [ref=e3126]: Feb 10 2026 15:42:32
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3127]':
+                      - generic [ref=e3129]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:32 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3130] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:32" [ref=e3131]:
+                      - generic [ref=e3132]:
+                        - button [ref=e3133]
+                        - button "Feb 10 2026 15:42:32" [ref=e3135]:
+                          - time [ref=e3136]: Feb 10 2026 15:42:32
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3137]':
+                      - generic [ref=e3139]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12294.ts \"HTTP/1.1 200 OK\"" [ref=e3140] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3141]:
+                      - generic [ref=e3142]:
+                        - button [ref=e3143]
+                        - button "Feb 10 2026 15:42:33" [ref=e3145]:
+                          - time [ref=e3146]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12294.ts \"HTTP/1.1 200 OK\"" [ref=e3147]':
+                      - generic [ref=e3149]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12294.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12308.ts (234624 bytes)" [ref=e3150] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3151]:
+                      - generic [ref=e3152]:
+                        - button [ref=e3153]
+                        - button "Feb 10 2026 15:42:33" [ref=e3155]:
+                          - time [ref=e3156]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12308.ts (234624 bytes)" [ref=e3157]':
+                      - generic [ref=e3159]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12308.ts (234624 bytes)"
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12349.ts (250792 bytes)" [ref=e3160] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3161]:
+                      - generic [ref=e3162]:
+                        - button [ref=e3163]
+                        - button "Feb 10 2026 15:42:33" [ref=e3165]:
+                          - time [ref=e3166]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12349.ts (250792 bytes)" [ref=e3167]':
+                      - generic [ref=e3169]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12349.ts (250792 bytes)"
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3170] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3171]:
+                      - generic [ref=e3172]:
+                        - button [ref=e3173]
+                        - button "Feb 10 2026 15:42:33" [ref=e3175]:
+                          - time [ref=e3176]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3177]':
+                      - generic [ref=e3179]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12303.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12309.ts \"HTTP/1.1 200 OK\"" [ref=e3180] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3181]:
+                      - generic [ref=e3182]:
+                        - button [ref=e3183]
+                        - button "Feb 10 2026 15:42:33" [ref=e3185]:
+                          - time [ref=e3186]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12309.ts \"HTTP/1.1 200 OK\"" [ref=e3187]':
+                      - generic [ref=e3189]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12309.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12350.ts \"HTTP/1.1 200 OK\"" [ref=e3190] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3191]:
+                      - generic [ref=e3192]:
+                        - button [ref=e3193]
+                        - button "Feb 10 2026 15:42:33" [ref=e3195]:
+                          - time [ref=e3196]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12350.ts \"HTTP/1.1 200 OK\"" [ref=e3197]':
+                      - generic [ref=e3199]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12350.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12309.ts (234436 bytes)" [ref=e3200] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3201]:
+                      - generic [ref=e3202]:
+                        - button [ref=e3203]
+                        - button "Feb 10 2026 15:42:33" [ref=e3205]:
+                          - time [ref=e3206]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12309.ts (234436 bytes)" [ref=e3207]':
+                      - generic [ref=e3209]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12309.ts (234436 bytes)"
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12350.ts (251920 bytes)" [ref=e3210] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3211]:
+                      - generic [ref=e3212]:
+                        - button [ref=e3213]
+                        - button "Feb 10 2026 15:42:33" [ref=e3215]:
+                          - time [ref=e3216]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12350.ts (251920 bytes)" [ref=e3217]':
+                      - generic [ref=e3219]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12350.ts (251920 bytes)"
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12310.ts \"HTTP/1.1 200 OK\"" [ref=e3220] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3221]:
+                      - generic [ref=e3222]:
+                        - button [ref=e3223]
+                        - button "Feb 10 2026 15:42:33" [ref=e3225]:
+                          - time [ref=e3226]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12310.ts \"HTTP/1.1 200 OK\"" [ref=e3227]':
+                      - generic [ref=e3229]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12310.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch7: [STT] 또한 정책 토론을 개최하여 민간 협력 거버넌스 강화하여 경계한 도민의 신뢰와 정책 수용을 지속적으로 제거해 나가겠습니다. (0.95) [화자 1]" [ref=e3230] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3231]:
+                      - generic [ref=e3232]:
+                        - button [ref=e3233]
+                        - button "Feb 10 2026 15:42:33" [ref=e3235]:
+                          - time [ref=e3236]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: [STT] 또한 정책 토론을 개최하여 민간 협력 거버넌스 강화하여 경계한 도민의 신뢰와 정책 수용을 지속적으로 제거해 나가겠습니다. (0.95) [화자 1]" [ref=e3237]':
+                      - generic [ref=e3239]: "INFO: app.services.channel_stt - Channel ch7: [STT] 또한 정책 토론을 개최하여 민간 협력 거버넌스 강화하여 경계한 도민의 신뢰와 정책 수용을 지속적으로 제거해 나가겠습니다. (0.95) [화자 1]"
+                  - 'row "Feb 10 2026 15:42:33 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12351.ts \"HTTP/1.1 200 OK\"" [ref=e3240] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3241]:
+                      - generic [ref=e3242]:
+                        - button [ref=e3243]
+                        - button "Feb 10 2026 15:42:33" [ref=e3245]:
+                          - time [ref=e3246]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12351.ts \"HTTP/1.1 200 OK\"" [ref=e3247]':
+                      - generic [ref=e3249]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12351.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch7: [STT] 규제 완화와적 규제 정상화를 추진하여 경기 북부 성장 동력을 창출하고, (0.98) [화자 1]" [ref=e3250] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3251]:
+                      - generic [ref=e3252]:
+                        - button [ref=e3253]
+                        - button "Feb 10 2026 15:42:33" [ref=e3255]:
+                          - time [ref=e3256]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: [STT] 규제 완화와적 규제 정상화를 추진하여 경기 북부 성장 동력을 창출하고, (0.98) [화자 1]" [ref=e3257]':
+                      - generic [ref=e3259]: "INFO: app.services.channel_stt - Channel ch7: [STT] 규제 완화와적 규제 정상화를 추진하여 경기 북부 성장 동력을 창출하고, (0.98) [화자 1]"
+                  - 'row "Feb 10 2026 15:42:33 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12310.ts (235188 bytes)" [ref=e3260] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:33" [ref=e3261]:
+                      - generic [ref=e3262]:
+                        - button [ref=e3263]
+                        - button "Feb 10 2026 15:42:33" [ref=e3265]:
+                          - time [ref=e3266]: Feb 10 2026 15:42:33
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12310.ts (235188 bytes)" [ref=e3267]':
+                      - generic [ref=e3269]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12310.ts (235188 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12351.ts (253236 bytes)" [ref=e3270] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3271]:
+                      - generic [ref=e3272]:
+                        - button [ref=e3273]
+                        - button "Feb 10 2026 15:42:34" [ref=e3275]:
+                          - time [ref=e3276]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12351.ts (253236 bytes)" [ref=e3277]':
+                      - generic [ref=e3279]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12351.ts (253236 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12294.ts (219396 bytes)" [ref=e3280] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3281]:
+                      - generic [ref=e3282]:
+                        - button [ref=e3283]
+                        - button "Feb 10 2026 15:42:34" [ref=e3285]:
+                          - time [ref=e3286]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12294.ts (219396 bytes)" [ref=e3287]':
+                      - generic [ref=e3289]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12294.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12303.ts (219396 bytes)" [ref=e3290] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3291]:
+                      - generic [ref=e3292]:
+                        - button [ref=e3293]
+                        - button "Feb 10 2026 15:42:34" [ref=e3295]:
+                          - time [ref=e3296]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12303.ts (219396 bytes)" [ref=e3297]':
+                      - generic [ref=e3299]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12303.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12295.ts \"HTTP/1.1 200 OK\"" [ref=e3300] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3301]:
+                      - generic [ref=e3302]:
+                        - button [ref=e3303]
+                        - button "Feb 10 2026 15:42:34" [ref=e3305]:
+                          - time [ref=e3306]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12295.ts \"HTTP/1.1 200 OK\"" [ref=e3307]':
+                      - generic [ref=e3309]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12295.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12295.ts (219208 bytes)" [ref=e3310] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3311]:
+                      - generic [ref=e3312]:
+                        - button [ref=e3313]
+                        - button "Feb 10 2026 15:42:34" [ref=e3315]:
+                          - time [ref=e3316]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12295.ts (219208 bytes)" [ref=e3317]':
+                      - generic [ref=e3319]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12295.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12304.ts \"HTTP/1.1 200 OK\"" [ref=e3320] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3321]:
+                      - generic [ref=e3322]:
+                        - button [ref=e3323]
+                        - button "Feb 10 2026 15:42:34" [ref=e3325]:
+                          - time [ref=e3326]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12304.ts \"HTTP/1.1 200 OK\"" [ref=e3327]':
+                      - generic [ref=e3329]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12304.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12304.ts (219396 bytes)" [ref=e3330] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3331]:
+                      - generic [ref=e3332]:
+                        - button [ref=e3333]
+                        - button "Feb 10 2026 15:42:34" [ref=e3335]:
+                          - time [ref=e3336]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12304.ts (219396 bytes)" [ref=e3337]':
+                      - generic [ref=e3339]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12304.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:34 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12296.ts \"HTTP/1.1 200 OK\"" [ref=e3340] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3341]:
+                      - generic [ref=e3342]:
+                        - button [ref=e3343]
+                        - button "Feb 10 2026 15:42:34" [ref=e3345]:
+                          - time [ref=e3346]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12296.ts \"HTTP/1.1 200 OK\"" [ref=e3347]':
+                      - generic [ref=e3349]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12296.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:34 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12296.ts (219396 bytes)" [ref=e3350] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:34" [ref=e3351]:
+                      - generic [ref=e3352]:
+                        - button [ref=e3353]
+                        - button "Feb 10 2026 15:42:34" [ref=e3355]:
+                          - time [ref=e3356]: Feb 10 2026 15:42:34
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12296.ts (219396 bytes)" [ref=e3357]':
+                      - generic [ref=e3359]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12296.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:35 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12305.ts \"HTTP/1.1 200 OK\"" [ref=e3360] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:35" [ref=e3361]:
+                      - generic [ref=e3362]:
+                        - button [ref=e3363]
+                        - button "Feb 10 2026 15:42:35" [ref=e3365]:
+                          - time [ref=e3366]: Feb 10 2026 15:42:35
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12305.ts \"HTTP/1.1 200 OK\"" [ref=e3367]':
+                      - generic [ref=e3369]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12305.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:35 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12305.ts (219208 bytes)" [ref=e3370] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:35" [ref=e3371]:
+                      - generic [ref=e3372]:
+                        - button [ref=e3373]
+                        - button "Feb 10 2026 15:42:35" [ref=e3375]:
+                          - time [ref=e3376]: Feb 10 2026 15:42:35
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12305.ts (219208 bytes)" [ref=e3377]':
+                      - generic [ref=e3379]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12305.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:39 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3380] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:39" [ref=e3381]:
+                      - generic [ref=e3382]:
+                        - button [ref=e3383]
+                        - button "Feb 10 2026 15:42:39" [ref=e3385]:
+                          - time [ref=e3386]: Feb 10 2026 15:42:39
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3387]':
+                      - generic [ref=e3389]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:39 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3390] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:39" [ref=e3391]:
+                      - generic [ref=e3392]:
+                        - button [ref=e3393]
+                        - button "Feb 10 2026 15:42:39" [ref=e3395]:
+                          - time [ref=e3396]: Feb 10 2026 15:42:39
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3397]':
+                      - generic [ref=e3399]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:40 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12312.ts \"HTTP/1.1 200 OK\"" [ref=e3400] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:40" [ref=e3401]:
+                      - generic [ref=e3402]:
+                        - button [ref=e3403]
+                        - button "Feb 10 2026 15:42:40" [ref=e3405]:
+                          - time [ref=e3406]: Feb 10 2026 15:42:40
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12312.ts \"HTTP/1.1 200 OK\"" [ref=e3407]':
+                      - generic [ref=e3409]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12312.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:40 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12353.ts \"HTTP/1.1 200 OK\"" [ref=e3410] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:40" [ref=e3411]:
+                      - generic [ref=e3412]:
+                        - button [ref=e3413]
+                        - button "Feb 10 2026 15:42:40" [ref=e3415]:
+                          - time [ref=e3416]: Feb 10 2026 15:42:40
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12353.ts \"HTTP/1.1 200 OK\"" [ref=e3417]':
+                      - generic [ref=e3419]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12353.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:40 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3420] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:40" [ref=e3421]:
+                      - generic [ref=e3422]:
+                        - button [ref=e3423]
+                        - button "Feb 10 2026 15:42:40" [ref=e3425]:
+                          - time [ref=e3426]: Feb 10 2026 15:42:40
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3427]':
+                      - generic [ref=e3429]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:41 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3430] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:41" [ref=e3431]:
+                      - generic [ref=e3432]:
+                        - button [ref=e3433]
+                        - button "Feb 10 2026 15:42:41" [ref=e3435]:
+                          - time [ref=e3436]: Feb 10 2026 15:42:41
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3437]':
+                      - generic [ref=e3439]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/chunklist_w1534822461.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12312.ts (235188 bytes)" [ref=e3440] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3441]:
+                      - generic [ref=e3442]:
+                        - button [ref=e3443]
+                        - button "Feb 10 2026 15:42:42" [ref=e3445]:
+                          - time [ref=e3446]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12312.ts (235188 bytes)" [ref=e3447]':
+                      - generic [ref=e3449]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12312.ts (235188 bytes)"
+                  - 'row "Feb 10 2026 15:42:42 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12313.ts \"HTTP/1.1 200 OK\"" [ref=e3450] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3451]:
+                      - generic [ref=e3452]:
+                        - button [ref=e3453]
+                        - button "Feb 10 2026 15:42:42" [ref=e3455]:
+                          - time [ref=e3456]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12313.ts \"HTTP/1.1 200 OK\"" [ref=e3457]':
+                      - generic [ref=e3459]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12313.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:42 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12354.ts \"HTTP/1.1 200 OK\"" [ref=e3460] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3461]:
+                      - generic [ref=e3462]:
+                        - button [ref=e3463]
+                        - button "Feb 10 2026 15:42:42" [ref=e3465]:
+                          - time [ref=e3466]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12354.ts \"HTTP/1.1 200 OK\"" [ref=e3467]':
+                      - generic [ref=e3469]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12354.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12313.ts (235188 bytes)" [ref=e3470] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3471]:
+                      - generic [ref=e3472]:
+                        - button [ref=e3473]
+                        - button "Feb 10 2026 15:42:42" [ref=e3475]:
+                          - time [ref=e3476]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12313.ts (235188 bytes)" [ref=e3477]':
+                      - generic [ref=e3479]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12313.ts (235188 bytes)"
+                  - 'row "Feb 10 2026 15:42:42 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12314.ts \"HTTP/1.1 200 OK\"" [ref=e3480] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3481]:
+                      - generic [ref=e3482]:
+                        - button [ref=e3483]
+                        - button "Feb 10 2026 15:42:42" [ref=e3485]:
+                          - time [ref=e3486]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12314.ts \"HTTP/1.1 200 OK\"" [ref=e3487]':
+                      - generic [ref=e3489]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12314.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12355.ts (253048 bytes)" [ref=e3490] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3491]:
+                      - generic [ref=e3492]:
+                        - button [ref=e3493]
+                        - button "Feb 10 2026 15:42:42" [ref=e3495]:
+                          - time [ref=e3496]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12355.ts (253048 bytes)" [ref=e3497]':
+                      - generic [ref=e3499]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12355.ts (253048 bytes)"
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch2: [STT] 이 십 사 쪽 저희들이 수행하는 연구가 이제 좀 현장에 룰 이루다 보니까요 다시 말씀 드리면은 이제 연구가 프로그램 중심의 접근을 하는데 늘 연 (0.94) [화자 1]" [ref=e3500] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3501]:
+                      - generic [ref=e3502]:
+                        - button [ref=e3503]
+                        - button "Feb 10 2026 15:42:42" [ref=e3505]:
+                          - time [ref=e3506]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: [STT] 이 십 사 쪽 저희들이 수행하는 연구가 이제 좀 현장에 룰 이루다 보니까요 다시 말씀 드리면은 이제 연구가 프로그램 중심의 접근을 하는데 늘 연 (0.94) [화자 1]" [ref=e3507]':
+                      - generic [ref=e3509]: "INFO: app.services.channel_stt - Channel ch2: [STT] 이 십 사 쪽 저희들이 수행하는 연구가 이제 좀 현장에 룰 이루다 보니까요 다시 말씀 드리면은 이제 연구가 프로그램 중심의 접근을 하는데 늘 연 (0.94) [화자 1]"
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch7: [STT] 산업 경쟁력을 강화해 나가겠습니다 십 육적 중점적으로 과제에 대해서 보고 드리겠습니다. (0.79) [화자 1]" [ref=e3510] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3511]:
+                      - generic [ref=e3512]:
+                        - button [ref=e3513]
+                        - button "Feb 10 2026 15:42:42" [ref=e3515]:
+                          - time [ref=e3516]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: [STT] 산업 경쟁력을 강화해 나가겠습니다 십 육적 중점적으로 과제에 대해서 보고 드리겠습니다. (0.79) [화자 1]" [ref=e3517]':
+                      - generic [ref=e3519]: "INFO: app.services.channel_stt - Channel ch7: [STT] 산업 경쟁력을 강화해 나가겠습니다 십 육적 중점적으로 과제에 대해서 보고 드리겠습니다. (0.79) [화자 1]"
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12314.ts (236316 bytes)" [ref=e3520] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3521]:
+                      - generic [ref=e3522]:
+                        - button [ref=e3523]
+                        - button "Feb 10 2026 15:42:42" [ref=e3525]:
+                          - time [ref=e3526]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12314.ts (236316 bytes)" [ref=e3527]':
+                      - generic [ref=e3529]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12314.ts (236316 bytes)"
+                  - 'row "Feb 10 2026 15:42:42 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12298.ts (219208 bytes)" [ref=e3541] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3542]:
+                      - generic [ref=e3543]:
+                        - button [ref=e3544]
+                        - button "Feb 10 2026 15:42:42" [ref=e3546]:
+                          - time [ref=e3547]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12298.ts (219208 bytes)" [ref=e3548]':
+                      - generic [ref=e3550]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12298.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:42 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12299.ts \"HTTP/1.1 200 OK\"" [ref=e3551] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:42" [ref=e3552]:
+                      - generic [ref=e3553]:
+                        - button [ref=e3554]
+                        - button "Feb 10 2026 15:42:42" [ref=e3556]:
+                          - time [ref=e3557]: Feb 10 2026 15:42:42
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12299.ts \"HTTP/1.1 200 OK\"" [ref=e3558]':
+                      - generic [ref=e3560]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12299.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:43 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12307.ts (219396 bytes)" [ref=e3561] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:43" [ref=e3562]:
+                      - generic [ref=e3563]:
+                        - button [ref=e3564]
+                        - button "Feb 10 2026 15:42:43" [ref=e3566]:
+                          - time [ref=e3567]: Feb 10 2026 15:42:43
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12307.ts (219396 bytes)" [ref=e3568]':
+                      - generic [ref=e3570]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12307.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:43 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12299.ts (219396 bytes)" [ref=e3571] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:43" [ref=e3572]:
+                      - generic [ref=e3573]:
+                        - button [ref=e3574]
+                        - button "Feb 10 2026 15:42:43" [ref=e3576]:
+                          - time [ref=e3577]: Feb 10 2026 15:42:43
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12299.ts (219396 bytes)" [ref=e3578]':
+                      - generic [ref=e3580]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12299.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:43 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12308.ts \"HTTP/1.1 200 OK\"" [ref=e3581] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:43" [ref=e3582]:
+                      - generic [ref=e3583]:
+                        - button [ref=e3584]
+                        - button "Feb 10 2026 15:42:43" [ref=e3586]:
+                          - time [ref=e3587]: Feb 10 2026 15:42:43
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12308.ts \"HTTP/1.1 200 OK\"" [ref=e3588]':
+                      - generic [ref=e3590]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12308.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:43 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12300.ts \"HTTP/1.1 200 OK\"" [ref=e3591] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:43" [ref=e3592]:
+                      - generic [ref=e3593]:
+                        - button [ref=e3594]
+                        - button "Feb 10 2026 15:42:43" [ref=e3596]:
+                          - time [ref=e3597]: Feb 10 2026 15:42:43
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12300.ts \"HTTP/1.1 200 OK\"" [ref=e3598]':
+                      - generic [ref=e3600]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12300.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:44 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12300.ts (219396 bytes)" [ref=e3601] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:44" [ref=e3602]:
+                      - generic [ref=e3603]:
+                        - button [ref=e3604]
+                        - button "Feb 10 2026 15:42:44" [ref=e3606]:
+                          - time [ref=e3607]: Feb 10 2026 15:42:44
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12300.ts (219396 bytes)" [ref=e3608]':
+                      - generic [ref=e3610]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12300.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:44 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12308.ts (219208 bytes)" [ref=e3611] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:44" [ref=e3612]:
+                      - generic [ref=e3613]:
+                        - button [ref=e3614]
+                        - button "Feb 10 2026 15:42:44" [ref=e3616]:
+                          - time [ref=e3617]: Feb 10 2026 15:42:44
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12308.ts (219208 bytes)" [ref=e3618]':
+                      - generic [ref=e3620]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12308.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:44 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12309.ts \"HTTP/1.1 200 OK\"" [ref=e3621] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:44" [ref=e3622]:
+                      - generic [ref=e3623]:
+                        - button [ref=e3624]
+                        - button "Feb 10 2026 15:42:44" [ref=e3626]:
+                          - time [ref=e3627]: Feb 10 2026 15:42:44
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12309.ts \"HTTP/1.1 200 OK\"" [ref=e3628]':
+                      - generic [ref=e3630]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12309.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:44 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12309.ts (219396 bytes)" [ref=e3631] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:44" [ref=e3632]:
+                      - generic [ref=e3633]:
+                        - button [ref=e3634]
+                        - button "Feb 10 2026 15:42:44" [ref=e3636]:
+                          - time [ref=e3637]: Feb 10 2026 15:42:44
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12309.ts (219396 bytes)" [ref=e3638]':
+                      - generic [ref=e3640]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12309.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:45 WARNING: app.services.channel_stt - Channel ch5: segment download/send failed:" [ref=e3641] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:45" [ref=e3642]:
+                      - generic [ref=e3643]:
+                        - button [ref=e3644]
+                        - button "Feb 10 2026 15:42:45" [ref=e3646]:
+                          - time [ref=e3647]: Feb 10 2026 15:42:45
+                    - 'cell "WARNING: app.services.channel_stt - Channel ch5: segment download/send failed:" [ref=e3648]':
+                      - generic [ref=e3650]: "WARNING: app.services.channel_stt - Channel ch5: segment download/send failed:"
+                  - 'row "Feb 10 2026 15:42:46 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12283.ts \"HTTP/1.1 404 Not Found\"" [ref=e3651] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:46" [ref=e3652]:
+                      - generic [ref=e3653]:
+                        - button [ref=e3654]
+                        - button "Feb 10 2026 15:42:46" [ref=e3656]:
+                          - time [ref=e3657]: Feb 10 2026 15:42:46
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12283.ts \"HTTP/1.1 404 Not Found\"" [ref=e3658]':
+                      - generic [ref=e3660]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12283.ts \"HTTP/1.1 404 Not Found\""
+                  - 'row "Feb 10 2026 15:42:46 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts \"HTTP/1.1 404 Not Found\"" [ref=e3661] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:46" [ref=e3662]:
+                      - generic [ref=e3663]:
+                        - button [ref=e3664]
+                        - button "Feb 10 2026 15:42:46" [ref=e3666]:
+                          - time [ref=e3667]: Feb 10 2026 15:42:46
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts \"HTTP/1.1 404 Not Found\"" [ref=e3668]':
+                      - generic [ref=e3670]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts \"HTTP/1.1 404 Not Found\""
+                  - 'row "Feb 10 2026 15:42:46 WARNING: app.services.channel_stt - Channel ch5: segment download/send failed: Client error ''404 Not Found'' for url ''https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts''" [ref=e3671] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:46" [ref=e3672]:
+                      - generic [ref=e3673]:
+                        - button [ref=e3674]
+                        - button "Feb 10 2026 15:42:46" [ref=e3676]:
+                          - time [ref=e3677]: Feb 10 2026 15:42:46
+                    - 'cell "WARNING: app.services.channel_stt - Channel ch5: segment download/send failed: Client error ''404 Not Found'' for url ''https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts''" [ref=e3678]':
+                      - generic [ref=e3680]: "WARNING: app.services.channel_stt - Channel ch5: segment download/send failed: Client error '404 Not Found' for url 'https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12284.ts'"
+                  - 'row "Feb 10 2026 15:42:46 For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404" [ref=e3681] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:46" [ref=e3682]:
+                      - generic [ref=e3683]:
+                        - button [ref=e3684]
+                        - button "Feb 10 2026 15:42:46" [ref=e3686]:
+                          - time [ref=e3687]: Feb 10 2026 15:42:46
+                    - 'cell "For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404" [ref=e3688]':
+                      - generic [ref=e3690]: "For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+                  - 'row "Feb 10 2026 15:42:48 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3691] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:48" [ref=e3692]:
+                      - generic [ref=e3693]:
+                        - button [ref=e3694]
+                        - button "Feb 10 2026 15:42:48" [ref=e3696]:
+                          - time [ref=e3697]: Feb 10 2026 15:42:48
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3698]':
+                      - generic [ref=e3700]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/chunklist_w1686543150.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:48 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3701] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:48" [ref=e3702]:
+                      - generic [ref=e3703]:
+                        - button [ref=e3704]
+                        - button "Feb 10 2026 15:42:48" [ref=e3706]:
+                          - time [ref=e3707]: Feb 10 2026 15:42:48
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3708]':
+                      - generic [ref=e3710]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/chunklist_w1448892466.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:49 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12357.ts \"HTTP/1.1 200 OK\"" [ref=e3711] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:49" [ref=e3712]:
+                      - generic [ref=e3713]:
+                        - button [ref=e3714]
+                        - button "Feb 10 2026 15:42:49" [ref=e3716]:
+                          - time [ref=e3717]: Feb 10 2026 15:42:49
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12357.ts \"HTTP/1.1 200 OK\"" [ref=e3718]':
+                      - generic [ref=e3720]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12357.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:49 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12316.ts \"HTTP/1.1 200 OK\"" [ref=e3721] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:49" [ref=e3722]:
+                      - generic [ref=e3723]:
+                        - button [ref=e3724]
+                        - button "Feb 10 2026 15:42:49" [ref=e3726]:
+                          - time [ref=e3727]: Feb 10 2026 15:42:49
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12316.ts \"HTTP/1.1 200 OK\"" [ref=e3728]':
+                      - generic [ref=e3730]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12316.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:49 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3731] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:49" [ref=e3732]:
+                      - generic [ref=e3733]:
+                        - button [ref=e3734]
+                        - button "Feb 10 2026 15:42:49" [ref=e3736]:
+                          - time [ref=e3737]: Feb 10 2026 15:42:49
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3738]':
+                      - generic [ref=e3740]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/chunklist_w1807348105.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:50 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12302.ts \"HTTP/1.1 200 OK\"" [ref=e3741] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:50" [ref=e3742]:
+                      - generic [ref=e3743]:
+                        - button [ref=e3744]
+                        - button "Feb 10 2026 15:42:50" [ref=e3746]:
+                          - time [ref=e3747]: Feb 10 2026 15:42:50
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12302.ts \"HTTP/1.1 200 OK\"" [ref=e3748]':
+                      - generic [ref=e3750]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12302.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:50 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12357.ts (256244 bytes)" [ref=e3751] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:50" [ref=e3752]:
+                      - generic [ref=e3753]:
+                        - button [ref=e3754]
+                        - button "Feb 10 2026 15:42:50" [ref=e3756]:
+                          - time [ref=e3757]: Feb 10 2026 15:42:50
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12357.ts (256244 bytes)" [ref=e3758]':
+                      - generic [ref=e3760]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12357.ts (256244 bytes)"
+                  - 'row "Feb 10 2026 15:42:51 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12359.ts \"HTTP/1.1 200 OK\"" [ref=e3761] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3762]:
+                      - generic [ref=e3763]:
+                        - button [ref=e3764]
+                        - button "Feb 10 2026 15:42:51" [ref=e3766]:
+                          - time [ref=e3767]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12359.ts \"HTTP/1.1 200 OK\"" [ref=e3768]':
+                      - generic [ref=e3770]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch2/media_w1686543150_12359.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:51 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12318.ts \"HTTP/1.1 200 OK\"" [ref=e3771] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3772]:
+                      - generic [ref=e3773]:
+                        - button [ref=e3774]
+                        - button "Feb 10 2026 15:42:51" [ref=e3776]:
+                          - time [ref=e3777]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12318.ts \"HTTP/1.1 200 OK\"" [ref=e3778]':
+                      - generic [ref=e3780]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12318.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:51 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12317.ts \"HTTP/1.1 200 OK\"" [ref=e3781] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3782]:
+                      - generic [ref=e3783]:
+                        - button [ref=e3784]
+                        - button "Feb 10 2026 15:42:51" [ref=e3786]:
+                          - time [ref=e3787]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12317.ts \"HTTP/1.1 200 OK\"" [ref=e3788]':
+                      - generic [ref=e3790]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch7/media_w1448892466_12317.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:51 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12312.ts \"HTTP/1.1 200 OK\"" [ref=e3791] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3792]:
+                      - generic [ref=e3793]:
+                        - button [ref=e3794]
+                        - button "Feb 10 2026 15:42:51" [ref=e3796]:
+                          - time [ref=e3797]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12312.ts \"HTTP/1.1 200 OK\"" [ref=e3798]':
+                      - generic [ref=e3800]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12312.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:51 INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12317.ts (233308 bytes)" [ref=e3801] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3802]:
+                      - generic [ref=e3803]:
+                        - button [ref=e3804]
+                        - button "Feb 10 2026 15:42:51" [ref=e3806]:
+                          - time [ref=e3807]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12317.ts (233308 bytes)" [ref=e3808]':
+                      - generic [ref=e3810]: "INFO: app.services.channel_stt - Channel ch7: sending segment media_w1448892466_12317.ts (233308 bytes)"
+                  - 'row "Feb 10 2026 15:42:51 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12302.ts (219208 bytes)" [ref=e3811] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3812]:
+                      - generic [ref=e3813]:
+                        - button [ref=e3814]
+                        - button "Feb 10 2026 15:42:51" [ref=e3816]:
+                          - time [ref=e3817]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12302.ts (219208 bytes)" [ref=e3818]':
+                      - generic [ref=e3820]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12302.ts (219208 bytes)"
+                  - 'row "Feb 10 2026 15:42:51 INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12359.ts (253612 bytes)" [ref=e3821] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3822]:
+                      - generic [ref=e3823]:
+                        - button [ref=e3824]
+                        - button "Feb 10 2026 15:42:51" [ref=e3826]:
+                          - time [ref=e3827]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12359.ts (253612 bytes)" [ref=e3828]':
+                      - generic [ref=e3830]: "INFO: app.services.channel_stt - Channel ch2: sending segment media_w1686543150_12359.ts (253612 bytes)"
+                  - 'row "Feb 10 2026 15:42:51 INFO: app.services.channel_stt - Channel ch2: [STT] 사실 이제 정책 단위에서의 직접적인 사업의 개선인 문제를 해결하는 데 직접적으로 늘 반영이 되고 있습니다 예를 들면 (0.98) [화자 1]" [ref=e3831] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3832]:
+                      - generic [ref=e3833]:
+                        - button [ref=e3834]
+                        - button "Feb 10 2026 15:42:51" [ref=e3836]:
+                          - time [ref=e3837]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: app.services.channel_stt - Channel ch2: [STT] 사실 이제 정책 단위에서의 직접적인 사업의 개선인 문제를 해결하는 데 직접적으로 늘 반영이 되고 있습니다 예를 들면 (0.98) [화자 1]" [ref=e3838]':
+                      - generic [ref=e3840]: "INFO: app.services.channel_stt - Channel ch2: [STT] 사실 이제 정책 단위에서의 직접적인 사업의 개선인 문제를 해결하는 데 직접적으로 늘 반영이 되고 있습니다 예를 들면 (0.98) [화자 1]"
+                  - 'row "Feb 10 2026 15:42:51 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3841] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:51" [ref=e3842]:
+                      - generic [ref=e3843]:
+                        - button [ref=e3844]
+                        - button "Feb 10 2026 15:42:51" [ref=e3846]:
+                          - time [ref=e3847]: Feb 10 2026 15:42:51
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3848]':
+                      - generic [ref=e3850]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12303.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:52 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12304.ts (219396 bytes)" [ref=e3851] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3852]:
+                      - generic [ref=e3853]:
+                        - button [ref=e3854]
+                        - button "Feb 10 2026 15:42:52" [ref=e3856]:
+                          - time [ref=e3857]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12304.ts (219396 bytes)" [ref=e3858]':
+                      - generic [ref=e3860]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12304.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:52 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12313.ts \"HTTP/1.1 200 OK\"" [ref=e3861] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3862]:
+                      - generic [ref=e3863]:
+                        - button [ref=e3864]
+                        - button "Feb 10 2026 15:42:52" [ref=e3866]:
+                          - time [ref=e3867]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12313.ts \"HTTP/1.1 200 OK\"" [ref=e3868]':
+                      - generic [ref=e3870]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12313.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:52 INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12303.ts (219396 bytes)" [ref=e3871] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3872]:
+                      - generic [ref=e3873]:
+                        - button [ref=e3874]
+                        - button "Feb 10 2026 15:42:52" [ref=e3876]:
+                          - time [ref=e3877]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12303.ts (219396 bytes)" [ref=e3878]':
+                      - generic [ref=e3880]: "INFO: app.services.channel_stt - Channel ch4: sending segment media_w1807348105_12303.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:52 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12312.ts (219396 bytes)" [ref=e3881] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3882]:
+                      - generic [ref=e3883]:
+                        - button [ref=e3884]
+                        - button "Feb 10 2026 15:42:52" [ref=e3886]:
+                          - time [ref=e3887]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12312.ts (219396 bytes)" [ref=e3888]':
+                      - generic [ref=e3890]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12312.ts (219396 bytes)"
+                  - 'row "Feb 10 2026 15:42:52 INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12304.ts \"HTTP/1.1 200 OK\"" [ref=e3891] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3892]:
+                      - generic [ref=e3893]:
+                        - button [ref=e3894]
+                        - button "Feb 10 2026 15:42:52" [ref=e3896]:
+                          - time [ref=e3897]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12304.ts \"HTTP/1.1 200 OK\"" [ref=e3898]':
+                      - generic [ref=e3900]: "INFO: httpx - HTTP Request: GET https://stream02.cdn.gov-ntruss.com/live/ch4/media_w1807348105_12304.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:52 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12313.ts (219772 bytes)" [ref=e3901] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3902]:
+                      - generic [ref=e3903]:
+                        - button [ref=e3904]
+                        - button "Feb 10 2026 15:42:52" [ref=e3906]:
+                          - time [ref=e3907]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12313.ts (219772 bytes)" [ref=e3908]':
+                      - generic [ref=e3910]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12313.ts (219772 bytes)"
+                  - 'row "Feb 10 2026 15:42:52 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/chunklist_w54675759.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3911] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3912]:
+                      - generic [ref=e3913]:
+                        - button [ref=e3914]
+                        - button "Feb 10 2026 15:42:52" [ref=e3916]:
+                          - time [ref=e3917]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/chunklist_w54675759.m3u8 \"HTTP/1.1 200 OK\"" [ref=e3918]':
+                      - generic [ref=e3920]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/chunklist_w54675759.m3u8 \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:52 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12314.ts \"HTTP/1.1 200 OK\"" [ref=e3921] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:52" [ref=e3922]:
+                      - generic [ref=e3923]:
+                        - button [ref=e3924]
+                        - button "Feb 10 2026 15:42:52" [ref=e3926]:
+                          - time [ref=e3927]: Feb 10 2026 15:42:52
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12314.ts \"HTTP/1.1 200 OK\"" [ref=e3928]':
+                      - generic [ref=e3930]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch13/media_w1534822461_12314.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:53 INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12314.ts (219772 bytes)" [ref=e3931] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:53" [ref=e3932]:
+                      - generic [ref=e3933]:
+                        - button [ref=e3934]
+                        - button "Feb 10 2026 15:42:53" [ref=e3936]:
+                          - time [ref=e3937]: Feb 10 2026 15:42:53
+                    - 'cell "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12314.ts (219772 bytes)" [ref=e3938]':
+                      - generic [ref=e3940]: "INFO: app.services.channel_stt - Channel ch13: sending segment media_w1534822461_12314.ts (219772 bytes)"
+                  - 'row "Feb 10 2026 15:42:53 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12301.ts \"HTTP/1.1 200 OK\"" [ref=e3941] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:53" [ref=e3942]:
+                      - generic [ref=e3943]:
+                        - button [ref=e3944]
+                        - button "Feb 10 2026 15:42:53" [ref=e3946]:
+                          - time [ref=e3947]: Feb 10 2026 15:42:53
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12301.ts \"HTTP/1.1 200 OK\"" [ref=e3948]':
+                      - generic [ref=e3950]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12301.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:54 INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12301.ts (287640 bytes)" [ref=e3951] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:54" [ref=e3952]:
+                      - generic [ref=e3953]:
+                        - button [ref=e3954]
+                        - button "Feb 10 2026 15:42:54" [ref=e3956]:
+                          - time [ref=e3957]: Feb 10 2026 15:42:54
+                    - 'cell "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12301.ts (287640 bytes)" [ref=e3958]':
+                      - generic [ref=e3960]: "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12301.ts (287640 bytes)"
+                  - 'row "Feb 10 2026 15:42:55 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12302.ts \"HTTP/1.1 200 OK\"" [ref=e3961] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:55" [ref=e3962]:
+                      - generic [ref=e3963]:
+                        - button [ref=e3964]
+                        - button "Feb 10 2026 15:42:55" [ref=e3966]:
+                          - time [ref=e3967]: Feb 10 2026 15:42:55
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12302.ts \"HTTP/1.1 200 OK\"" [ref=e3968]':
+                      - generic [ref=e3970]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12302.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:55 INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12302.ts (288204 bytes)" [ref=e3971] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:55" [ref=e3972]:
+                      - generic [ref=e3973]:
+                        - button [ref=e3974]
+                        - button "Feb 10 2026 15:42:55" [ref=e3976]:
+                          - time [ref=e3977]: Feb 10 2026 15:42:55
+                    - 'cell "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12302.ts (288204 bytes)" [ref=e3978]':
+                      - generic [ref=e3980]: "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12302.ts (288204 bytes)"
+                  - 'row "Feb 10 2026 15:42:55 INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3981] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:55" [ref=e3982]:
+                      - generic [ref=e3983]:
+                        - button [ref=e3984]
+                        - button "Feb 10 2026 15:42:55" [ref=e3986]:
+                          - time [ref=e3987]: Feb 10 2026 15:42:55
+                    - 'cell "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12303.ts \"HTTP/1.1 200 OK\"" [ref=e3988]':
+                      - generic [ref=e3990]: "INFO: httpx - HTTP Request: GET https://stream01.cdn.gov-ntruss.com/live/ch5/media_w54675759_12303.ts \"HTTP/1.1 200 OK\""
+                  - 'row "Feb 10 2026 15:42:55 INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12303.ts (287828 bytes)" [ref=e3991] [cursor=pointer]':
+                    - cell "Feb 10 2026 15:42:55" [ref=e3992]:
+                      - generic [ref=e3993]:
+                        - button [ref=e3994]
+                        - button "Feb 10 2026 15:42:55" [ref=e3996]:
+                          - time [ref=e3997]: Feb 10 2026 15:42:55
+                    - 'cell "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12303.ts (287828 bytes)" [ref=e3998]':
+                      - generic [ref=e4000]: "INFO: app.services.channel_stt - Channel ch5: sending segment media_w54675759_12303.ts (287828 bytes)"
+                  - row [ref=e4001]:
+                    - cell [ref=e4002]
+                - generic [ref=e3532]:
+                  - button "Jump to top" [ref=e3533] [cursor=pointer]:
+                    - img [ref=e3535]
+                  - button "Jump to bottom" [disabled] [ref=e3537]:
+                    - img [ref=e3539]
+  - alert [ref=e103]: ggc-subtitle

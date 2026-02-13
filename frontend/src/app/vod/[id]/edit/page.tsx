@@ -10,6 +10,7 @@ import ProofreadingToolbar from '../../../../components/ProofreadingToolbar';
 import SubtitleHistoryModal from '../../../../components/SubtitleHistoryModal';
 import TranscriptStatusBadge from '../../../../components/TranscriptStatusBadge';
 import VideoControls from '../../../../components/VideoControls';
+import { useBreadcrumb } from '../../../../contexts/BreadcrumbContext';
 import { apiClient, updateSubtitlesBatch } from '../../../../lib/api';
 
 import type { SubtitleBatchItem } from '../../../../lib/api';
@@ -47,6 +48,7 @@ const SPEAKER_OPTIONS = [
 
 export default function SubtitleEditPage({ params }: EditPageProps) {
   const router = useRouter();
+  const { setTitle } = useBreadcrumb();
   const { id } = params;
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -85,6 +87,7 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
         ]);
 
         setMeeting(meetingData);
+        setTitle(meetingData.title);
         const items = subtitlesResponse.items ?? [];
         setOriginalSubtitles(items);
         setEditedSubtitles(items);
@@ -100,7 +103,7 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, setTitle]);
 
   // 현재 재생 위치에 해당하는 자막 인덱스
   const currentSubtitleIndex = editedSubtitles.findIndex(
@@ -263,37 +266,21 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
   return (
     <div
       data-testid="subtitle-edit-page"
-      className="min-h-screen flex flex-col bg-gray-50"
+      className="flex flex-col h-full"
     >
-      {/* 상단 헤더 */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        {/* 좌: 뒤로가기 버튼 */}
-        <button
-          data-testid="back-button"
-          onClick={handleBack}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      {/* 상단 툴바 */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            data-testid="back-button"
+            onClick={handleBack}
+            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="font-medium">돌아가기</span>
-        </button>
-
-        {/* 중: 제목 + 상태 배지 */}
-        <div className="flex items-center gap-2 flex-1 justify-center">
-          <h1 className="text-lg font-semibold text-gray-900">
-            {meeting.title} - 자막 편집
-          </h1>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            돌아가기
+          </button>
           <TranscriptStatusBadge
             meetingId={id}
             status={meeting.transcript_status || 'draft'}
@@ -303,13 +290,11 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
             }
           />
         </div>
-
-        {/* 우: 저장 버튼 */}
         <button
           data-testid="save-button"
           onClick={handleSave}
           disabled={!hasChanges || isSaving}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             hasChanges && !isSaving
               ? 'bg-primary text-white hover:bg-primary-light'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -324,10 +309,10 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
             `저장${hasChanges ? ` (${changesCount})` : ''}`
           )}
         </button>
-      </header>
+      </div>
 
       {/* 메인 영역 */}
-      <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0">
         {/* 좌측: 비디오 플레이어 (60%) */}
         <div className="w-full lg:w-[60%]">
           <Mp4Player
@@ -483,7 +468,7 @@ export default function SubtitleEditPage({ params }: EditPageProps) {
             )}
           </div>
         </div>
-      </main>
+      </div>
 
       {/* 변경 이력 모달 */}
       {historySubtitleId && (

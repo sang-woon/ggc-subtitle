@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import Header from '../../../components/Header';
 import MeetingInfoPanel from '../../../components/MeetingInfoPanel';
 import MeetingSummaryPanel from '../../../components/MeetingSummaryPanel';
 import Mp4Player from '../../../components/Mp4Player';
@@ -13,6 +12,7 @@ import SubtitlePanel from '../../../components/SubtitlePanel';
 import TranscriptExportButton from '../../../components/TranscriptExportButton';
 import TranscriptStatusBadge from '../../../components/TranscriptStatusBadge';
 import VideoControls from '../../../components/VideoControls';
+import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { apiClient, ApiError, startSttProcessing, getSttStatus, getVerificationStats } from '../../../lib/api';
 
 import type { SttStatusResponse } from '../../../lib/api';
@@ -24,6 +24,7 @@ interface VodViewerPageProps {
 
 export default function VodViewerPage({ params }: VodViewerPageProps) {
   const router = useRouter();
+  const { setTitle } = useBreadcrumb();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [meeting, setMeeting] = useState<MeetingType | null>(null);
   const [subtitles, setSubtitles] = useState<SubtitleType[]>([]);
@@ -67,6 +68,7 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
         ]);
 
         setMeeting(meetingData);
+        setTitle(meetingData.title);
         setSubtitles(subtitlesResponse.items ?? []);
         if (meetingData.duration_seconds) {
           setDuration(meetingData.duration_seconds);
@@ -87,7 +89,7 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, setTitle]);
 
   // 폴링 정리
   useEffect(() => {
@@ -230,9 +232,7 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
   }
 
   return (
-    <div data-testid="vod-viewer-page" className="min-h-screen flex flex-col bg-gray-50">
-      <Header title={meeting.title} showVodBadge />
-
+    <div data-testid="vod-viewer-page" className="flex flex-col h-full">
       <main
         data-testid="vod-layout"
         className="flex-1 flex flex-col lg:flex-row gap-4 p-4"
@@ -373,7 +373,13 @@ export default function VodViewerPage({ params }: VodViewerPageProps) {
 
           {/* 자막 편집 + 검증 버튼 */}
           {subtitles.length > 0 && (
-            <div className="mt-2 flex gap-2">
+           <div className="mt-2 flex gap-2">
+              <Link
+                href={`/vod/${id}/speaker`}
+                className="flex-1 rounded-md border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors text-center"
+              >
+                화자 관리
+              </Link>
               <Link
                 href={`/vod/${id}/edit`}
                 className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-center"

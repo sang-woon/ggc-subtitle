@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import Link from 'next/link';
 
-import { Header, LiveMeetingCard, RecentVodList, VodRegisterModal } from '@/components';
+import { LiveMeetingCard, RecentVodList, VodRegisterModal } from '@/components';
 import { useLiveMeeting, useRecentVods } from '@/hooks';
 import { apiClient, ApiError } from '@/lib/api';
 import type { VodRegisterFormType, MeetingType } from '@/types';
@@ -47,10 +47,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showRegisterButton onRegisterClick={handleRegisterClick} />
-
-      <main className="max-w-4xl mx-auto px-4 py-8">
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">경기도의회 실시간 자막 서비스</h1>
 
         <div className="space-y-6">
@@ -110,7 +108,7 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </main>
+      </div>
 
       <VodRegisterModal
         isOpen={isRegisterModalOpen}
@@ -122,3 +120,4 @@ export default function Home() {
     </div>
   );
 }
+

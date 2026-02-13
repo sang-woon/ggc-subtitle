@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import Header from '@/components/Header';
 import { globalSearch } from '@/lib/api';
 import type { SearchResultItem, SearchResponse } from '@/lib/api';
 
@@ -135,10 +134,8 @@ function SearchPageContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header title="통합 검색" />
-
-      <main className="max-w-4xl mx-auto p-4 space-y-4">
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* 검색 영역 */}
         <div className="bg-white rounded-lg shadow-sm p-4 space-y-3">
           <div className="flex gap-2">
@@ -283,7 +280,7 @@ function SearchPageContent() {
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

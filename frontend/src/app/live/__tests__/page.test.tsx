@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act } from 'react';
+
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import LivePage from '../page';
@@ -95,11 +97,23 @@ describe('LivePage', () => {
     clearSubtitles: jest.fn(),
   };
 
+  const renderLivePage = async (options: { expectSttStart?: boolean } = {}) => {
+    const { expectSttStart = true } = options;
+
+    render(<LivePage />);
+
+    if (expectSttStart) {
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+      });
+    }
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ status: 'started' }),
+      json: () => new Promise(() => {}),
       text: () => Promise.resolve(''),
     });
     mockUseSubtitleWebSocket.mockReturnValue(defaultWebSocketReturn);
@@ -124,48 +138,48 @@ describe('LivePage', () => {
       });
     });
 
-    it('renders the page', () => {
-      render(<LivePage />);
+    it('renders the page', async () => {
+      await renderLivePage();
 
       expect(screen.getByTestId('live-page')).toBeInTheDocument();
     });
 
-    it('shows header with channel name', () => {
-      render(<LivePage />);
+    it('shows header with channel name', async () => {
+      await renderLivePage();
 
       // 채널 이름이 헤더와 채널바에 표시됨
       const channelNames = screen.getAllByText('본회의');
       expect(channelNames.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('shows live badge in header', () => {
-      render(<LivePage />);
+    it('shows live badge in header', async () => {
+      await renderLivePage();
 
       // Header와 채널바 모두 LIVE 배지가 표시됨
       const liveBadges = screen.getAllByText(/LIVE|Live/i);
       expect(liveBadges.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders HLS player', () => {
-      render(<LivePage />);
+    it('renders HLS player', async () => {
+      await renderLivePage();
 
       expect(screen.getByTestId('hls-player-container')).toBeInTheDocument();
     });
 
-    it('renders subtitle panel', () => {
-      render(<LivePage />);
+    it('renders subtitle panel', async () => {
+      await renderLivePage();
 
       expect(screen.getByTestId('subtitle-panel')).toBeInTheDocument();
     });
 
-    it('renders search input in header', () => {
-      render(<LivePage />);
+    it('renders search input in header', async () => {
+      await renderLivePage();
 
       expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    it('has 70/30 layout on desktop', () => {
-      render(<LivePage />);
+    it('has 70/30 layout on desktop', async () => {
+      await renderLivePage();
 
       const mainContent = screen.getByTestId('main-content');
       const sidebar = screen.getByTestId('sidebar');
@@ -185,22 +199,22 @@ describe('LivePage', () => {
       });
     });
 
-    it('shows channel selector', () => {
-      render(<LivePage />);
+    it('shows channel selector', async () => {
+      await renderLivePage({ expectSttStart: false });
 
       expect(screen.getByTestId('channel-selector')).toBeInTheDocument();
       expect(screen.getByText('채널 선택')).toBeInTheDocument();
     });
 
-    it('shows channel list', () => {
-      render(<LivePage />);
+    it('shows channel list', async () => {
+      await renderLivePage({ expectSttStart: false });
 
       expect(screen.getByText('본회의')).toBeInTheDocument();
     });
 
     it('navigates to channel on select', async () => {
       const user = userEvent.setup();
-      render(<LivePage />);
+      await renderLivePage({ expectSttStart: false });
 
       await user.click(screen.getByTestId('channel-ch14'));
 
@@ -224,8 +238,8 @@ describe('LivePage', () => {
       });
     });
 
-    it('shows loading spinner in channel selector', () => {
-      render(<LivePage />);
+    it('shows loading spinner in channel selector', async () => {
+      await renderLivePage({ expectSttStart: false });
 
       // ChannelSelector shows spinner when isLoading=true
       expect(screen.getByTestId('live-page')).toBeInTheDocument();
@@ -245,12 +259,14 @@ describe('LivePage', () => {
       jest.useFakeTimers();
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
-      render(<LivePage />);
+      await renderLivePage();
 
       const searchInput = screen.getByRole('searchbox');
       await user.type(searchInput, '예산');
 
-      jest.advanceTimersByTime(300);
+      await act(async () => {
+        jest.advanceTimersByTime(300);
+      });
 
       // The subtitle panel should receive the search query
       // This is tested via integration - the searchQuery prop is passed to SubtitlePanel
@@ -269,16 +285,16 @@ describe('LivePage', () => {
       });
     });
 
-    it('stacks content on mobile', () => {
-      render(<LivePage />);
+    it('stacks content on mobile', async () => {
+      await renderLivePage();
 
       const layout = screen.getByTestId('live-layout');
       expect(layout).toHaveClass('flex-col');
       expect(layout).toHaveClass('lg:flex-row');
     });
 
-    it('video takes full width on mobile', () => {
-      render(<LivePage />);
+    it('video takes full width on mobile', async () => {
+      await renderLivePage();
 
       const mainContent = screen.getByTestId('main-content');
       expect(mainContent).toHaveClass('w-full');
@@ -294,31 +310,31 @@ describe('LivePage', () => {
       });
     });
 
-    it('displays connection status', () => {
-      render(<LivePage />);
+    it('displays connection status', async () => {
+      await renderLivePage();
 
       expect(screen.getByTestId('connection-status')).toBeInTheDocument();
       expect(screen.getByText('연결됨')).toBeInTheDocument();
     });
 
-    it('shows connecting status when connecting', () => {
+    it('shows connecting status when connecting', async () => {
       mockUseSubtitleWebSocket.mockReturnValue({
         ...defaultWebSocketReturn,
         connectionStatus: 'connecting',
       });
 
-      render(<LivePage />);
+      await renderLivePage();
 
       expect(screen.getByText('연결 중...')).toBeInTheDocument();
     });
 
-    it('shows disconnected status and reconnect button when disconnected', () => {
+    it('shows disconnected status and reconnect button when disconnected', async () => {
       mockUseSubtitleWebSocket.mockReturnValue({
         ...defaultWebSocketReturn,
         connectionStatus: 'disconnected',
       });
 
-      render(<LivePage />);
+      await renderLivePage();
 
       expect(screen.getByText('연결 끊김')).toBeInTheDocument();
       expect(screen.getByTestId('reconnect-button')).toBeInTheDocument();
@@ -333,26 +349,26 @@ describe('LivePage', () => {
       });
 
       const user = userEvent.setup();
-      render(<LivePage />);
+      await renderLivePage();
 
       await user.click(screen.getByTestId('reconnect-button'));
 
       expect(mockConnect).toHaveBeenCalledTimes(1);
     });
 
-    it('shows error status and reconnect button when error', () => {
+    it('shows error status and reconnect button when error', async () => {
       mockUseSubtitleWebSocket.mockReturnValue({
         ...defaultWebSocketReturn,
         connectionStatus: 'error',
       });
 
-      render(<LivePage />);
+      await renderLivePage();
 
       expect(screen.getByText('연결 오류')).toBeInTheDocument();
       expect(screen.getByTestId('reconnect-button')).toBeInTheDocument();
     });
 
-    it('displays received subtitles in the panel', () => {
+    it('displays received subtitles in the panel', async () => {
       const mockSubtitles = [
         {
           id: 'sub-1',
@@ -371,7 +387,7 @@ describe('LivePage', () => {
         subtitles: mockSubtitles,
       });
 
-      render(<LivePage />);
+      await renderLivePage();
 
       // SubtitleOverlay + SubtitlePanel 양쪽에서 렌더링됨
       const matches = screen.getAllByText('테스트 자막입니다.');

@@ -95,7 +95,7 @@ describe('VodTable', () => {
     it('displays "-" for null duration', () => {
       const vodWithNullDuration: MeetingType[] = [
         {
-          ...mockVodList[0],
+          ...mockVodList[0]!,
           duration_seconds: null,
         },
       ];
@@ -181,7 +181,7 @@ describe('VodTable', () => {
       render(<VodTable vods={mockVodList} />);
 
       const mobileCards = screen.getAllByTestId('vod-mobile-card');
-      await user.click(mobileCards[0]);
+      await user.click(mobileCards[0]!);
 
       expect(mockPush).toHaveBeenCalledWith('/vod/vod-1');
     });

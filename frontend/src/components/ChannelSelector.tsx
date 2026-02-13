@@ -78,6 +78,18 @@ function ScheduleInfo({ channel }: { channel: ChannelType }) {
   );
 }
 
+function SttStatusBadge({ running }: { running?: boolean }) {
+  if (!running) {
+    return null;
+  }
+
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
+      STT ON
+    </span>
+  );
+}
+
 export default function ChannelSelector({ channels, isLoading, onSelect }: ChannelSelectorProps) {
   // 방송중 > 정회중 > 일정 있는 방송전 > 일정 없는 채널 순 정렬
   const sortedChannels = useMemo(() => {
@@ -161,8 +173,9 @@ export default function ChannelSelector({ channels, isLoading, onSelect }: Chann
                 {channel.name}
               </span>
               <ScheduleInfo channel={channel} />
-              <div className="mt-1 h-5">
+              <div className="mt-1 h-5 flex items-center justify-center gap-1">
                 <StatusBadge livestatus={channel.livestatus} hasSchedule={channel.has_schedule} />
+                <SttStatusBadge running={channel.stt_running} />
               </div>
             </button>
           );

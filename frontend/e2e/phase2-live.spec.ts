@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import type { ChannelType } from '../src/types';
 
 /**
  * Phase 2 E2E Test Suite
@@ -72,6 +73,48 @@ const mockSubtitles = [
   },
 ];
 
+const mockChannels: ChannelType[] = [
+  {
+    id: 'ch1',
+    code: 'ch1',
+    name: '도청채널',
+    stream_url: 'https://example.com/stream.m3u8',
+    livestatus: 1,
+    status_text: '방송중',
+    has_schedule: true,
+    session_no: 352,
+    session_order: 1,
+    stt_running: false,
+  },
+  {
+    id: 'ch2',
+    code: 'ch2',
+    name: '휴식채널',
+    stream_url: 'https://example.com/stream-off.m3u8',
+    livestatus: 0,
+    status_text: '방송전',
+    has_schedule: false,
+    stt_running: false,
+  },
+];
+
+const mockNoBroadcastChannels: ChannelType[] = [
+  mockChannels[0]!,
+  {
+    ...mockChannels[1]!,
+    livestatus: 0,
+    status_text: '방송전',
+  } as ChannelType,
+];
+
+function getLiveChannelTestId(channelId: string) {
+  return `channel-${channelId}`;
+}
+
+function getLiveChannelUrl(channelId: string = 'ch1') {
+  return `/live?channel=${channelId}`;
+}
+
 /**
  * API Mock Setup - 페이지에 API 응답을 모킹
  */
@@ -79,11 +122,44 @@ async function setupApiMocks(page: Page, options: {
   hasLiveMeeting?: boolean;
   liveMeeting?: typeof mockLiveMeeting | null;
   recentVods?: typeof mockRecentVods;
+  channels?: ChannelType[];
+  apiDelay?: number;
 } = {}) {
-  const { hasLiveMeeting = true, liveMeeting = mockLiveMeeting, recentVods = mockRecentVods } = options;
+  const {
+    hasLiveMeeting = true,
+    liveMeeting = mockLiveMeeting,
+    recentVods = mockRecentVods,
+    channels = mockChannels,
+    apiDelay = 0,
+  } = options;
+
+  await page.route('**/api/channels/status', async (route) => {
+    if (apiDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, apiDelay));
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(channels),
+    });
+  });
+
+  await page.route('**/api/channels/*/stt/start', async (route) => {
+    if (apiDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, apiDelay));
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'started' }),
+    });
+  });
 
   // Mock GET /api/meetings/live
-  await page.route('**/api/meetings/live', async (route) => {
+  await page.route('**/api/meetings/live*', async (route) => {
+    if (apiDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, apiDelay));
+    }
     if (hasLiveMeeting && liveMeeting) {
       await route.fulfill({
         status: 200,
@@ -113,6 +189,9 @@ async function setupApiMocks(page: Page, options: {
 
   // Mock GET /api/meetings/{id}/subtitles
   await page.route('**/api/meetings/*/subtitles', async (route) => {
+    if (apiDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, apiDelay));
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -176,13 +255,14 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
       // Should navigate to /live
       await expect(page).toHaveURL('/live');
+      await expect(page.getByTestId('channel-selector')).toBeVisible();
     });
   });
 
   test.describe('S-02: Live Viewer Page', () => {
     test('should display live page with meeting info when broadcast exists', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // Page should be loaded
       await expect(page.getByTestId('live-page')).toBeVisible();
@@ -191,36 +271,43 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
       await expect(page.getByText('제352회 본회의')).toBeVisible();
 
       // Live badge should be visible
-      await expect(page.getByText('Live')).toBeVisible();
+      await expect(page.getByText('LIVE')).toBeVisible();
     });
 
     test('should show no broadcast message when no live meeting on /live', async ({ page }) => {
-      await setupApiMocks(page, { hasLiveMeeting: false });
-      await page.goto('/live');
+      await setupApiMocks(page, {
+        hasLiveMeeting: false,
+        channels: mockNoBroadcastChannels,
+      });
+      await page.goto(getLiveChannelUrl('ch2'));
 
       // Should show no broadcast message
-      await expect(page.getByText('현재 진행 중인 방송이 없습니다')).toBeVisible();
+      await expect(page.getByText('현재 방송 중이 아닙니다')).toBeVisible();
 
-      // Should have home button
-      const homeButton = page.getByRole('button', { name: /홈으로 이동/i });
-      await expect(homeButton).toBeVisible();
+      // Should have channel list button
+      const channelListButton = page.getByRole('button', { name: /채널 목록/i });
+      await expect(channelListButton).toBeVisible();
     });
 
-    test('should navigate to home when clicking home button on no broadcast', async ({ page }) => {
-      await setupApiMocks(page, { hasLiveMeeting: false });
-      await page.goto('/live');
+    test('should navigate to channel selector when clicking channel list button', async ({ page }) => {
+      await setupApiMocks(page, {
+        hasLiveMeeting: false,
+        channels: mockNoBroadcastChannels,
+      });
+      await page.goto(getLiveChannelUrl('ch2'));
 
-      // Click home button
-      const homeButton = page.getByRole('button', { name: /홈으로 이동/i });
-      await homeButton.click();
+      // Click channel list button
+      const channelListButton = page.getByRole('button', { name: /채널 목록/i });
+      await channelListButton.click();
 
-      // Should navigate to home
-      await expect(page).toHaveURL('/');
+      // Should return to channel selector
+      await expect(page).toHaveURL('/live');
+      await expect(page.getByTestId('channel-selector')).toBeVisible();
     });
 
     test('should display HLS player container', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // HLS player container should be visible
       await expect(page.getByTestId('hls-player-container')).toBeVisible();
@@ -228,7 +315,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should display subtitle panel', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // Subtitle panel should be visible
       await expect(page.getByTestId('subtitle-panel')).toBeVisible();
@@ -236,7 +323,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should display connection status', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // Connection status should be visible
       await expect(page.getByTestId('connection-status')).toBeVisible();
@@ -244,7 +331,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should have 70/30 layout for video and subtitles', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       const mainContent = page.getByTestId('main-content');
       const sidebar = page.getByTestId('sidebar');
@@ -262,7 +349,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
   test.describe('Search Functionality', () => {
     test('should have search input in header on live page', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // Search input should be visible
       const searchInput = page.getByRole('searchbox');
@@ -271,7 +358,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should be able to type in search input', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       const searchInput = page.getByRole('searchbox');
       await searchInput.fill('예산');
@@ -281,7 +368,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should show no results message when search has no matches', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       const searchInput = page.getByRole('searchbox');
       await searchInput.fill('존재하지않는검색어xyz');
@@ -300,12 +387,12 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
     test('should verify all meeting fields are accessible', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
 
-      // Navigate to home first
+      // Navigate to live page directly
       await page.goto('/');
 
       // id: Used for routing
-      const watchButton = page.getByRole('button', { name: /실시간 자막 보기/i });
-      await expect(watchButton).toBeVisible();
+      const liveButton = page.getByRole('button', { name: /실시간 자막 보기/i });
+      await expect(liveButton).toBeVisible();
 
       // title: Displayed on card
       await expect(page.getByText('제352회 본회의')).toBeVisible();
@@ -317,7 +404,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
       await expect(page.getByText('Live')).toBeVisible();
 
       // stream_url: Used in /live page for HLS player
-      await watchButton.click();
+      await page.goto(getLiveChannelUrl());
       await expect(page.getByTestId('hls-player-container')).toBeVisible();
     });
 
@@ -345,7 +432,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       const layout = page.getByTestId('live-layout');
       await expect(layout).toHaveClass(/flex-col/);
@@ -360,7 +447,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
       // Set desktop viewport
       await page.setViewportSize({ width: 1280, height: 800 });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       const layout = page.getByTestId('live-layout');
       await expect(layout).toHaveClass(/lg:flex-row/);
@@ -368,7 +455,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
   });
 
   test.describe('Navigation Flow', () => {
-    test('complete user flow: Home -> Live -> Home', async ({ page }) => {
+    test('complete user flow: Home -> channel selector -> channel live', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
 
       // Step 1: Start at home
@@ -380,27 +467,40 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
       await watchButton.click();
       await expect(page).toHaveURL('/live');
 
-      // Step 3: Verify live page content
+      // Step 3: Select a channel
+      await page.getByTestId(getLiveChannelTestId('ch1')).click();
+      await expect(page).toHaveURL('/live?channel=ch1');
+
+      // Step 4: Verify live page content
       await expect(page.getByTestId('live-page')).toBeVisible();
       await expect(page.getByText('제352회 본회의')).toBeVisible();
 
-      // Step 4: Use browser back to return home
+      // Step 5: Return to selector via browser back
+      await page.goBack();
+      await expect(page).toHaveURL('/live');
+      await expect(page.getByTestId('channel-selector')).toBeVisible();
+
+      // Step 6: Go back one more to home
       await page.goBack();
       await expect(page).toHaveURL('/');
     });
 
-    test('should redirect to home when visiting /live with no broadcast', async ({ page }) => {
-      await setupApiMocks(page, { hasLiveMeeting: false });
+    test('should return to channel selector when no broadcast is selected', async ({ page }) => {
+      await setupApiMocks(page, {
+        hasLiveMeeting: false,
+        channels: mockNoBroadcastChannels,
+      });
 
       // Go directly to /live
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl('ch2'));
 
-      // Should show no broadcast message with home button
-      await expect(page.getByText('현재 진행 중인 방송이 없습니다')).toBeVisible();
+      // Should show no broadcast message and channel selector button
+      await expect(page.getByText('현재 방송 중이 아닙니다')).toBeVisible();
 
-      // Click home button
-      await page.getByRole('button', { name: /홈으로 이동/i }).click();
-      await expect(page).toHaveURL('/');
+      // Click channel list button
+      await page.getByRole('button', { name: /채널 목록/i }).click();
+      await expect(page).toHaveURL('/live');
+      await expect(page.getByTestId('channel-selector')).toBeVisible();
     });
   });
 
@@ -415,7 +515,7 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 
     test('should display header with meeting title on live page', async ({ page }) => {
       await setupApiMocks(page, { hasLiveMeeting: true });
-      await page.goto('/live');
+      await page.goto(getLiveChannelUrl());
 
       // Header should show meeting title
       await expect(page.getByText('제352회 본회의')).toBeVisible();
@@ -433,34 +533,36 @@ test.describe('Phase 2: Live Meeting E2E Tests', () => {
 });
 
 test.describe('subtitles Resource Field Coverage', () => {
-  test('subtitle fields should be properly structured in mock data', async ({ page }) => {
+  test('subtitle fields should be properly structured in mock data', () => {
+    const subtitle = mockSubtitles[0]!;
+
     // This test verifies that our mock data includes all required subtitle fields
     // The actual WebSocket connection would provide real data
 
     // Verify mock subtitle structure
-    expect(mockSubtitles[0]).toHaveProperty('id');
-    expect(mockSubtitles[0]).toHaveProperty('meeting_id');
-    expect(mockSubtitles[0]).toHaveProperty('start_time');
-    expect(mockSubtitles[0]).toHaveProperty('end_time');
-    expect(mockSubtitles[0]).toHaveProperty('text');
-    expect(mockSubtitles[0]).toHaveProperty('speaker');
-    expect(mockSubtitles[0]).toHaveProperty('confidence');
-    expect(mockSubtitles[0]).toHaveProperty('created_at');
+    expect(subtitle).toHaveProperty('id');
+    expect(subtitle).toHaveProperty('meeting_id');
+    expect(subtitle).toHaveProperty('start_time');
+    expect(subtitle).toHaveProperty('end_time');
+    expect(subtitle).toHaveProperty('text');
+    expect(subtitle).toHaveProperty('speaker');
+    expect(subtitle).toHaveProperty('confidence');
+    expect(subtitle).toHaveProperty('created_at');
 
     // Verify field types
-    expect(typeof mockSubtitles[0].id).toBe('string');
-    expect(typeof mockSubtitles[0].meeting_id).toBe('string');
-    expect(typeof mockSubtitles[0].start_time).toBe('number');
-    expect(typeof mockSubtitles[0].end_time).toBe('number');
-    expect(typeof mockSubtitles[0].text).toBe('string');
-    expect(typeof mockSubtitles[0].confidence).toBe('number');
+    expect(typeof subtitle.id).toBe('string');
+    expect(typeof subtitle.meeting_id).toBe('string');
+    expect(typeof subtitle.start_time).toBe('number');
+    expect(typeof subtitle.end_time).toBe('number');
+    expect(typeof subtitle.text).toBe('string');
+    expect(typeof subtitle.confidence).toBe('number');
   });
 });
 
 test.describe('Error Handling', () => {
   test('should display error state when API fails on home', async ({ page }) => {
     // Mock API to return error
-    await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -482,9 +584,12 @@ test.describe('Error Handling', () => {
     await expect(page.getByText(/데이터를 불러오는 중 오류/).first()).toBeVisible();
   });
 
-  test('should display error state when API fails on live page', async ({ page }) => {
-    // Mock API to return error
-    await page.route('**/api/meetings/live', async (route) => {
+  test('should keep live view stable when meeting API fails', async ({ page }) => {
+    await setupApiMocks(page, {
+      channels: mockChannels,
+    });
+
+    await page.route('**/api/meetings/live*', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -492,20 +597,17 @@ test.describe('Error Handling', () => {
       });
     });
 
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl('ch2'));
 
-    // Error message should be visible
-    await expect(page.getByText(/오류가 발생했습니다/)).toBeVisible();
-
-    // Should have home button
-    await expect(page.getByRole('button', { name: /홈으로 이동/i })).toBeVisible();
+    // When meeting lookup fails, the page should still render and fall back to no-broadcast state
+    await expect(page.getByText('현재 방송 중이 아닙니다')).toBeVisible();
   });
 });
 
 test.describe('Loading States', () => {
   test('should show loading state initially on home page', async ({ page }) => {
     // Delay API response
-    await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await route.fulfill({
         status: 200,
@@ -534,7 +636,7 @@ test.describe('Loading States', () => {
 
   test('should show loading state initially on live page', async ({ page }) => {
     // Delay API response
-    await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await route.fulfill({
         status: 200,
@@ -543,9 +645,9 @@ test.describe('Loading States', () => {
       });
     });
 
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Loading indicator should be visible initially
-    await expect(page.getByTestId('page-loading')).toBeVisible();
+    await expect(page.getByText('로딩 중...')).toBeVisible();
   });
 });

@@ -1,4 +1,4 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * WebSocket E2E Tests for Phase 2
@@ -22,11 +22,56 @@ const mockMeeting = {
   updated_at: '2026-02-06T00:00:00Z',
 };
 
+const mockChannels = [
+  {
+    id: 'ch1',
+    code: 'ch1',
+    name: '도청채널',
+    stream_url: 'https://test.example.com/stream.m3u8',
+    livestatus: 1,
+    status_text: '방송중',
+    has_schedule: true,
+    session_no: 352,
+    session_order: 1,
+    stt_running: false,
+  },
+  {
+    id: 'ch2',
+    code: 'ch2',
+    name: '휴식채널',
+    stream_url: 'https://test.example.com/live-off.m3u8',
+    livestatus: 0,
+    status_text: '방송전',
+    has_schedule: false,
+    stt_running: false,
+  },
+];
+
+function getLiveChannelUrl(channelId: string = 'ch1') {
+  return `/live?channel=${channelId}`;
+}
+
 /**
  * Setup API mocks for WebSocket tests
  */
 async function setupApiMocks(page: Page) {
-  await page.route('**/api/meetings/live', async (route) => {
+  await page.route('**/api/channels/status', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(mockChannels),
+    });
+  });
+
+  await page.route('**/api/channels/*/stt/start', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'started' }),
+    });
+  });
+
+  await page.route('**/api/meetings/live*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -60,7 +105,7 @@ async function setupApiMocks(page: Page) {
 test.describe('WebSocket Connection Tests', () => {
   test('should display connection status component', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Wait for page to be fully loaded
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
@@ -75,7 +120,7 @@ test.describe('WebSocket Connection Tests', () => {
 
   test('should show appropriate connection state', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -90,7 +135,7 @@ test.describe('WebSocket Connection Tests', () => {
 
   test('should have reconnect button when connection fails', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -111,7 +156,7 @@ test.describe('WebSocket Connection Tests', () => {
 
   test('reconnect button should trigger connection attempt', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -136,7 +181,7 @@ test.describe('WebSocket Connection Tests', () => {
 test.describe('Subtitle Display Tests', () => {
   test('should display subtitle panel', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -146,7 +191,7 @@ test.describe('Subtitle Display Tests', () => {
 
   test('should show empty state when no subtitles', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -161,7 +206,7 @@ test.describe('Subtitle Display Tests', () => {
 
   test('subtitle panel should have scrollable container', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -178,7 +223,7 @@ test.describe('Subtitle Display Tests', () => {
 test.describe('Real-time Subtitle Search', () => {
   test('should have search input on live page', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -189,7 +234,7 @@ test.describe('Real-time Subtitle Search', () => {
 
   test('search should filter displayed subtitles', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -209,7 +254,7 @@ test.describe('Real-time Subtitle Search', () => {
 
   test('should show no results message for non-matching search', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -226,7 +271,7 @@ test.describe('Real-time Subtitle Search', () => {
 
   test('clearing search should show all subtitles', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -242,9 +287,9 @@ test.describe('Real-time Subtitle Search', () => {
 });
 
 test.describe('Connection Recovery', () => {
-  test('should handle page visibility change', async ({ page, context }) => {
+  test('should handle page visibility change', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -272,7 +317,7 @@ test.describe('Connection Recovery', () => {
 
   test('should handle network reconnection', async ({ page, context }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -292,7 +337,7 @@ test.describe('Connection Recovery', () => {
 test.describe('Subtitle UI Interactions', () => {
   test('should be able to scroll in subtitle panel', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -305,7 +350,7 @@ test.describe('Subtitle UI Interactions', () => {
 
   test('connection status should update badge style', async ({ page }) => {
     await setupApiMocks(page);
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
@@ -321,8 +366,10 @@ test.describe('Subtitle UI Interactions', () => {
 
 test.describe('Edge Cases', () => {
   test('should handle meeting ending while on live page', async ({ page }) => {
+    await setupApiMocks(page);
+
     // Start with live meeting
-    await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -338,11 +385,11 @@ test.describe('Edge Cases', () => {
       });
     });
 
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl('ch2'));
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
 
     // Simulate meeting ending by changing mock response
-    await page.route('**/api/meetings/live', async (route) => {
+    await page.route('**/api/meetings/live*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -354,7 +401,7 @@ test.describe('Edge Cases', () => {
     await page.reload();
 
     // Should now show no broadcast message
-    await expect(page.getByText('현재 진행 중인 방송이 없습니다')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('현재 방송 중이 아닙니다')).toBeVisible({ timeout: 10000 });
   });
 
   test('should handle rapid navigation', async ({ page }) => {
@@ -362,7 +409,7 @@ test.describe('Edge Cases', () => {
 
     // Navigate quickly between pages
     await page.goto('/');
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Wait for page to stabilize before navigation
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });
@@ -371,7 +418,7 @@ test.describe('Edge Cases', () => {
     await page.waitForURL('/');
 
     // Go forward again
-    await page.goto('/live');
+    await page.goto(getLiveChannelUrl());
 
     // Should still be functional
     await expect(page.getByTestId('live-page')).toBeVisible({ timeout: 10000 });

@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import Badge from '../../components/Badge';
 import ChannelSelector from '../../components/ChannelSelector';
-import Header from '../../components/Header';
 import HlsPlayer from '../../components/HlsPlayer';
 import SearchInput from '../../components/SearchInput';
 import SubtitleOverlay from '../../components/SubtitleOverlay';
@@ -321,8 +320,7 @@ function LivePageContent() {
   // 채널 미선택 상태 → ChannelSelector 표시
   if (!activeChannelId) {
     return (
-      <div data-testid="live-page" className="min-h-screen flex flex-col bg-gray-50">
-        <Header title="실시간 방송" showLiveBadge={false} />
+      <div data-testid="live-page" className="flex flex-col h-full">
         <ChannelSelector
           channels={channels}
           isLoading={isChannelsLoading}
@@ -336,11 +334,7 @@ function LivePageContent() {
   const connectionBadge = getConnectionStatusBadge(connectionStatus);
 
   return (
-    <div data-testid="live-page" className="min-h-screen flex flex-col bg-gray-50">
-      <Header title={activeChannelName || '실시간 방송'} showSearch showLiveBadge={isOnAir === true}>
-        <SearchInput onSearch={handleSearch} placeholder="자막 검색..." />
-      </Header>
-
+    <div data-testid="live-page" className="flex flex-col h-full">
       {/* 채널 변경 바 */}
       <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3">
         <button
@@ -354,6 +348,9 @@ function LivePageContent() {
         </button>
         <span className="text-sm text-gray-400">|</span>
         <span className="text-sm font-medium text-gray-700">{activeChannelName}</span>
+        <div className="ml-auto">
+          <SearchInput onSearch={handleSearch} placeholder="자막 검색..." />
+        </div>
         {isOnAir === true ? (
           <Badge variant="live">LIVE</Badge>
         ) : isOnAir === false ? (

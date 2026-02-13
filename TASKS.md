@@ -223,3 +223,134 @@
   - `backend/app/services/transcript_export.py` 수정
   - 공식 회의록 + 마크다운 내보내기에 요약 섹션 추가
   - 의존성: T2.1
+
+---
+
+## Phase 8: Railway 안정성 + OpenAI 실시간 자막 교정
+
+### Feature 8: Railway 안정성
+
+- [x] **P8-T1.1**: Self-ping 헬스체크 `담당: backend-specialist`
+  - `backend/app/main.py` lifespan에 5분 간격 self-ping 백그라운드 태스크 추가
+  - PORT 환경변수가 있을 때만 활성화 (Railway 환경 전용)
+  - App Sleeping 방지
+  - 의존성: 없음
+
+- [x] **P8-T1.2**: AutoSttManager stop_all() 개선 `담당: backend-specialist`
+  - `backend/app/services/auto_stt.py` 수정
+  - `stop_all()` 메서드 추가: 모든 활성 채널 STT를 일괄 중지
+  - lifespan shutdown에서 완전한 정리 보장
+  - 의존성: 없음
+
+### Feature 9: OpenAI 실시간 자막 교정
+
+- [x] **P8-T2.1**: SubtitleCorrectorService 신규 `담당: backend-specialist`
+  - `backend/app/services/subtitle_corrector.py` 신규
+  - OpenAI GPT-4o-mini 배치 큐 교정 서비스
+  - 3개 자막씩 10초 간격 배치 처리
+  - 의회 전문 용어, 의원명, 숫자 보정에 특화
+  - 의존성: 없음
+
+- [x] **P8-T2.2**: WebSocket subtitle_corrected 이벤트 `담당: backend-specialist`
+  - `backend/app/api/websocket.py` 수정
+  - `subtitle_corrected` 이벤트 타입 추가
+  - 교정 결과를 실시간 구독자에게 전송
+  - 의존성: T2.1
+
+- [x] **P8-T2.3**: 프론트엔드 교정 UI `담당: frontend-specialist`
+  - `frontend/src/components/SubtitleItem.tsx` 수정
+  - 교정 완료된 자막에 체크마크 표시
+  - `subtitle_corrected` WebSocket 이벤트 처리
+  - 의존성: T2.2
+
+---
+
+## Phase 9: 플랫폼 셸 UI 통합
+
+### Feature 10: 통합 레이아웃 인프라
+
+- [x] **P9-T1.1**: SidebarContext 생성 `담당: frontend-specialist`
+  - `frontend/src/contexts/SidebarContext.tsx` 신규
+  - collapsed/mobileOpen 상태, toggle 함수, localStorage 지속
+  - 의존성: 없음
+
+- [x] **P9-T1.2**: BreadcrumbContext 생성 `담당: frontend-specialist`
+  - `frontend/src/contexts/BreadcrumbContext.tsx` 신규
+  - dynamicTitle + setTitle (useCallback으로 안정 참조)
+  - 의존성: 없음
+
+- [x] **P9-T1.3**: 네비게이션 설정 `담당: frontend-specialist`
+  - `frontend/src/config/navigation.ts` 신규
+  - 7모듈 메뉴 트리 (NAV_MODULES), 브레드크럼 맵 (BREADCRUMB_MAP)
+  - 사이드바 너비 상수, extractMeetingIdFromPath() 유틸
+  - 의존성: 없음
+
+- [x] **P9-T1.4**: Sidebar 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/layout/Sidebar.tsx` 신규
+  - 라이트 스타일 (bg-white border-r border-gray-200)
+  - 7모듈 아코디언, 접기/펼치기, 반응형 (데스크톱/태블릿/모바일)
+  - 의존성: T1.1, T1.3
+
+- [x] **P9-T1.5**: SidebarNavItem 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/layout/SidebarNavItem.tsx` 신규
+  - 모듈 그룹 (아이콘 + 라벨 + 아코디언), 활성 강조, 비활성 처리
+  - 축소 모드: 아이콘만 + 호버 툴팁
+  - 의존성: T1.3
+
+- [x] **P9-T1.6**: TopHeader 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/layout/TopHeader.tsx` 신규
+  - 48px 높이, 모바일 햄버거 + 브레드크럼 + 검색 아이콘
+  - 의존성: T1.1
+
+- [x] **P9-T1.7**: Breadcrumbs 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/layout/Breadcrumbs.tsx` 신규
+  - usePathname() 기반 정적 매핑 + 동적 회의 제목 (BreadcrumbContext)
+  - 의존성: T1.2, T1.3
+
+- [x] **P9-T1.8**: PlatformLayout 통합 셸 `담당: frontend-specialist`
+  - `frontend/src/components/layout/PlatformLayout.tsx` 신규
+  - Sidebar + TopHeader + main 영역 (`flex h-screen overflow-hidden`)
+  - 의존성: T1.4, T1.6
+
+### Feature 11: 페이지 적응
+
+- [x] **P9-T2.1**: layout.tsx 래핑 `담당: frontend-specialist`
+  - `frontend/src/app/layout.tsx` 수정
+  - SidebarProvider + BreadcrumbProvider + PlatformLayout으로 children 래핑
+  - 의존성: T1.8
+
+- [x] **P9-T2.2**: 8개 페이지 Header 제거 `담당: frontend-specialist`
+  - 대시보드, 실시간, VOD 목록, VOD 상세, 자막 편집, 자막 검증, 검색, 의안 페이지
+  - 개별 `<Header>` 제거 → `p-6` 컨텐츠 래퍼로 변경
+  - VOD 상세/편집/검증: BreadcrumbContext에 회의 제목 주입
+  - 의존성: T2.1
+
+### Feature 12: 회의 워크플로우 + Admin
+
+- [x] **P9-T3.1**: MeetingWorkflowNav 컴포넌트 `담당: frontend-specialist`
+  - `frontend/src/components/layout/MeetingWorkflowNav.tsx` 신규
+  - `/vod/[id]/*` 경로 감지 시 사이드바에 워크플로우 단계 표시
+  - 3단계: 회의 정보 → 자막 편집 → 자막 검증
+  - 의존성: T1.3
+
+- [x] **P9-T3.2**: Admin 스텁 페이지 `담당: frontend-specialist`
+  - `frontend/src/app/admin/page.tsx` 신규
+  - "시스템관리 - 준비 중" 플레이스홀더
+  - 의존성: 없음
+
+### Feature 13: 테스트
+
+- [x] **P9-T4.1**: 레이아웃 컴포넌트 테스트 `담당: frontend-specialist`
+  - Sidebar.test.tsx (5개), TopHeader.test.tsx (5개), Breadcrumbs.test.tsx (9개), PlatformLayout.test.tsx (4개)
+  - SidebarContext, BreadcrumbContext, next/navigation 모킹
+  - 의존성: T2.2
+
+- [x] **P9-T4.2**: 기존 테스트 수정 `담당: frontend-specialist`
+  - vod/page.test.tsx: Header mock 제거, 페이지 제목 확인으로 변경
+  - vod/[id]/page.test.tsx: BreadcrumbContext mock 추가, 안정 참조 setTitle
+  - 의존성: T2.2
+
+- [x] **P9-T4.3**: 빌드 + 전체 테스트 통과 `담당: frontend-specialist`
+  - `npm run build` 통과 (ESLint + TypeScript)
+  - `npx jest --no-coverage` 415/415 테스트 통과 (29 suites)
+  - 의존성: T4.1, T4.2

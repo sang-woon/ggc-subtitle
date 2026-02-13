@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 
 import HlsPlayer from '../HlsPlayer';
 
@@ -128,7 +128,10 @@ describe('HlsPlayer', () => {
 
       // Simulate video loading
       const video = screen.getByTestId('hls-video') as HTMLVideoElement;
-      video.dispatchEvent(new Event('loadeddata'));
+
+      act(() => {
+        video.dispatchEvent(new Event('loadeddata'));
+      });
 
       await waitFor(() => {
         expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
@@ -142,7 +145,10 @@ describe('HlsPlayer', () => {
 
       // Simulate error
       const video = screen.getByTestId('hls-video') as HTMLVideoElement;
-      video.dispatchEvent(new Event('error'));
+
+      act(() => {
+        video.dispatchEvent(new Event('error'));
+      });
 
       await waitFor(() => {
         expect(screen.getByText(/영상을 불러올 수 없습니다/)).toBeInTheDocument();
@@ -154,7 +160,10 @@ describe('HlsPlayer', () => {
       render(<HlsPlayer {...defaultProps} onError={handleError} />);
 
       const video = screen.getByTestId('hls-video') as HTMLVideoElement;
-      video.dispatchEvent(new Event('error'));
+
+      act(() => {
+        video.dispatchEvent(new Event('error'));
+      });
 
       await waitFor(() => {
         expect(handleError).toHaveBeenCalled();
@@ -213,7 +222,9 @@ describe('HlsPlayer', () => {
       mockOn.mockImplementation((event, handler) => {
         if (event === 'hlsManifestParsed') {
           // Simulate manifest parsed immediately
-          setTimeout(() => handler(), 0);
+          act(() => {
+            handler();
+          });
         }
       });
 
@@ -230,7 +241,9 @@ describe('HlsPlayer', () => {
       mockOn.mockImplementation((event, handler) => {
         if (event === 'hlsError') {
           // 네트워크/미디어 외의 에러 타입 → default case에서 즉시 onError 호출
-          setTimeout(() => handler(null, { fatal: true, type: 'otherError' }), 0);
+          act(() => {
+            handler(null, { fatal: true, type: 'otherError' });
+          });
         }
       });
 
@@ -246,14 +259,20 @@ describe('HlsPlayer', () => {
 
       mockOn.mockImplementation((event, handler) => {
         if (event === 'hlsError') {
-          setTimeout(() => handler(null, { fatal: false, type: 'networkError' }), 0);
+          act(() => {
+            handler(null, { fatal: false, type: 'networkError' });
+          });
         }
       });
 
       render(<HlsPlayer {...defaultProps} onError={handleError} />);
 
       // Wait a bit and ensure error wasn't called
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await act(async () => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+      });
       expect(handleError).not.toHaveBeenCalled();
     });
   });

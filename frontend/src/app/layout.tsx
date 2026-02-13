@@ -1,7 +1,10 @@
 import { JetBrains_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 
+import { PlatformLayout } from '@/components/layout';
 import { ToastProvider } from '@/components/Toast';
+import { BreadcrumbProvider } from '@/contexts/BreadcrumbContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 import './globals.css';
 
@@ -59,7 +62,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${pretendard.variable} ${jetbrainsMono.variable}`}>
       <body className={pretendard.className}>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <SidebarProvider>
+            <BreadcrumbProvider>
+              <PlatformLayout>{children}</PlatformLayout>
+            </BreadcrumbProvider>
+          </SidebarProvider>
+        </ToastProvider>
       </body>
     </html>
   );

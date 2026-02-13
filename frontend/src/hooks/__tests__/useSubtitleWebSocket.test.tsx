@@ -114,7 +114,7 @@ describe('useSubtitleWebSocket', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     MockWebSocket.clearInstances();
-    (global as unknown as { WebSocket: typeof MockWebSocket }).WebSocket = MockWebSocket as unknown as typeof WebSocket;
+    (global as { WebSocket: typeof WebSocket }).WebSocket = MockWebSocket as unknown as typeof WebSocket;
   });
 
   afterEach(() => {

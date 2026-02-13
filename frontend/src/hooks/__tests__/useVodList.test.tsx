@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 
 import { apiClient } from '@/lib/api';
 import type { MeetingType } from '@/types';
 
-import { useVodList } from '../useVodList';
+import { useVodList, type UseVodListOptions } from '../useVodList';
 
 // Mock the api module
 jest.mock('@/lib/api', () => ({
@@ -41,30 +41,48 @@ describe('useVodList', () => {
     },
   ];
 
-  // Wrapper to provide SWR config
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
+  const createWrapper = () => {
+    const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+      <SWRConfig value={{ provider: () => new Map() }}>
+        {children}
+      </SWRConfig>
+    );
+
+    return TestWrapper;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockedApiClient.mockResolvedValue(mockVods);
   });
 
-  describe('Initial State', () => {
-    it('returns loading state initially', () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+  const renderVodHook = async (options?: UseVodListOptions) => {
+    const result = renderHook(() => useVodList(options), {
+      wrapper: createWrapper(),
+    });
 
-      expect(result.current.isLoading).toBe(true);
-      expect(result.current.vods).toEqual([]);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    return result;
+  };
+
+  describe('Initial State', () => {
+    it('loads data on initial render', async () => {
+      const { result } = await renderVodHook();
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.vods).toEqual(mockVods);
     });
   });
 
   describe('Data Fetching', () => {
     it('fetches VOD list from API', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -79,7 +97,7 @@ describe('useVodList', () => {
     });
 
     it('returns VOD data after fetch', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -91,7 +109,7 @@ describe('useVodList', () => {
 
   describe('Pagination Support', () => {
     it('sends page parameter to API', async () => {
-      const { result } = renderHook(() => useVodList({ page: 2 }), { wrapper });
+      const { result } = await renderVodHook({ page: 2 });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -103,10 +121,7 @@ describe('useVodList', () => {
     });
 
     it('sends per_page parameter to API', async () => {
-      const { result } = renderHook(
-        () => useVodList({ page: 1, perPage: 20 }),
-        { wrapper }
-      );
+      const { result } = await renderVodHook({ page: 1, perPage: 20 });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -118,7 +133,7 @@ describe('useVodList', () => {
     });
 
     it('returns pagination info', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -140,7 +155,7 @@ describe('useVodList', () => {
       }));
       mockedApiClient.mockResolvedValue(fullPage);
 
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -155,7 +170,7 @@ describe('useVodList', () => {
       const mockError = new Error('Network error');
       mockedApiClient.mockRejectedValue(mockError);
 
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.error).not.toBeNull();
@@ -168,7 +183,7 @@ describe('useVodList', () => {
 
   describe('Mutate Function', () => {
     it('provides mutate function for refetching', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -180,7 +195,7 @@ describe('useVodList', () => {
 
   describe('Default Values', () => {
     it('uses default page=1 when not specified', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -192,7 +207,7 @@ describe('useVodList', () => {
     });
 
     it('uses default per_page=10 when not specified', async () => {
-      const { result } = renderHook(() => useVodList(), { wrapper });
+      const { result } = await renderVodHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);

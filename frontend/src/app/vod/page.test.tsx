@@ -19,10 +19,7 @@ jest.mock('@/hooks/useVodList', () => ({
   useVodList: (...args: unknown[]) => mockUseVodList(...args),
 }));
 
-// Mock Header component
-jest.mock('@/components', () => ({
-  Header: () => <header data-testid="header">Header</header>,
-}));
+// No Header mock needed - Header removed in favor of PlatformLayout
 
 describe('VodListPage', () => {
   const mockVods: MeetingType[] = [
@@ -72,10 +69,10 @@ describe('VodListPage', () => {
       expect(screen.getByText('VOD 목록')).toBeInTheDocument();
     });
 
-    it('renders Header component', () => {
+    it('renders page container', () => {
       render(<VodListPage />);
 
-      expect(screen.getByTestId('header')).toBeInTheDocument();
+      expect(screen.getByText('VOD 목록')).toBeInTheDocument();
     });
   });
 

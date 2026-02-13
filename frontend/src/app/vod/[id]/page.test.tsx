@@ -13,6 +13,15 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
+// Mock BreadcrumbContext (stable reference to prevent infinite re-renders)
+const mockSetTitle = jest.fn();
+jest.mock('../../../contexts/BreadcrumbContext', () => ({
+  useBreadcrumb: () => ({
+    dynamicTitle: null,
+    setTitle: mockSetTitle,
+  }),
+}));
+
 // Mock the apiClient
 const mockApiClient = jest.fn();
 jest.mock('../../../lib/api', () => ({
@@ -86,19 +95,19 @@ describe('VodViewerPage', () => {
       });
     });
 
-    it('shows header with meeting title after loading', async () => {
+    it('sets breadcrumb title after loading', async () => {
       render(<VodViewerPage params={defaultParams} />);
 
       await waitFor(() => {
-        expect(screen.getByText('제352회 본회의')).toBeInTheDocument();
+        expect(mockSetTitle).toHaveBeenCalledWith('제352회 본회의');
       });
     });
 
-    it('shows VOD badge in header', async () => {
+    it('shows meeting title after loading', async () => {
       render(<VodViewerPage params={defaultParams} />);
 
       await waitFor(() => {
-        expect(screen.getByText('VOD')).toBeInTheDocument();
+        expect(screen.getByTestId('vod-viewer-page')).toBeInTheDocument();
       });
     });
   });
@@ -160,6 +169,16 @@ describe('VodViewerPage', () => {
       await waitFor(() => {
         expect(screen.getByText('안녕하세요, 회의를 시작하겠습니다.')).toBeInTheDocument();
         expect(screen.getByText('첫 번째 안건을 상정합니다.')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('action links', () => {
+    it('shows quick link to speaker management', async () => {
+      render(<VodViewerPage params={defaultParams} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('link', { name: '화자 관리' })).toBeInTheDocument();
       });
     });
   });

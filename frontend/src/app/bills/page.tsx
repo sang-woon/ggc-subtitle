@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import Header from '@/components/Header';
 import { getBills, getBill } from '@/lib/api';
 import type { BillDetail, BillMention, BillsResponse } from '@/types';
 
@@ -194,10 +193,8 @@ function BillsPageContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header title="의안 관리" />
-
-      <main className="max-w-6xl mx-auto p-4 space-y-4">
+    <div className="p-6">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* 검색/필터 영역 */}
         <div className="bg-white rounded-lg shadow-sm p-4 space-y-3">
           <div className="flex gap-2">
@@ -523,7 +520,7 @@ function BillsPageContent() {
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@
 | **서비스명** | 경기도의회 실시간 자막 서비스 |
 | **목적** | 의회 회의 영상에 실시간/VOD 자막 제공 |
 | **핵심 기술** | Deepgram Nova-3 STT, WebSocket, HLS 스트리밍 |
-| **상태** | Phase 0~8 완료 (실시간/VOD 자막 + 의안관리 + 교정도구 + 대조관리 + AI 요약 + 실시간 자막 교정 + Railway 안정성) |
+| **상태** | Phase 0~9 완료 (실시간/VOD 자막 + 의안관리 + 교정도구 + 대조관리 + AI 요약 + 실시간 자막 교정 + Railway 안정성 + 플랫폼 셸 UI) |
 
 ---
 
@@ -54,8 +54,21 @@
 │   │   │   ├── live/          # 실시간 뷰어 (/live)
 │   │   │   ├── vod/           # VOD (/vod, /vod/[id], /vod/[id]/edit, /vod/[id]/verify)
 │   │   │   ├── bills/         # 의안 관리 (/bills)
-│   │   │   └── search/        # 통합 검색 (/search)
-│   │   ├── components/        # UI 컴포넌트 (26개)
+│   │   │   ├── search/        # 통합 검색 (/search)
+│   │   │   └── admin/         # 관리자 (/admin) [준비 중]
+│   │   ├── components/        # UI 컴포넌트 (33개)
+│   │   │   └── layout/        # 플랫폼 셸 (Phase 9)
+│   │   │       ├── PlatformLayout.tsx  # 통합 레이아웃 셸
+│   │   │       ├── Sidebar.tsx         # 좌측 사이드바 (7모듈)
+│   │   │       ├── SidebarNavItem.tsx  # 사이드바 메뉴 아이템
+│   │   │       ├── TopHeader.tsx       # 상단 헤더 (48px)
+│   │   │       ├── Breadcrumbs.tsx     # 브레드크럼 네비게이션
+│   │   │       └── MeetingWorkflowNav.tsx # 회의 워크플로우 서브내비
+│   │   ├── config/            # 설정
+│   │   │   └── navigation.ts  # 7모듈 메뉴 트리 + 브레드크럼 맵
+│   │   ├── contexts/          # React Context (Phase 9)
+│   │   │   ├── SidebarContext.tsx    # 사이드바 상태 (접기/펼치기)
+│   │   │   └── BreadcrumbContext.tsx # 동적 브레드크럼 제목
 │   │   ├── hooks/             # 커스텀 훅 (8개)
 │   │   ├── lib/               # API 클라이언트, Supabase
 │   │   ├── types/             # TypeScript 타입
@@ -221,16 +234,27 @@ fields:
 | S-06 | 대조 관리 | `/vod/:id/verify` | 검토 대기열 + 대조 처리 + 일괄 처리 |
 | S-07 | 의안 관리 | `/bills` | 의안 CRUD + 회의 연결 + 상태 필터 |
 | S-08 | 통합 검색 | `/search` | 자막 전문 검색 + 날짜/화자 필터 |
+| S-09 | 관리자 | `/admin` | 시스템관리 (준비 중) |
 | M-01 | VOD 등록 모달 | - | 폼 유효성 검사 + KMS/MP4 URL 등록 |
 
 ---
 
-## 컴포넌트 맵 (26개)
+## 컴포넌트 맵 (33개)
+
+### 플랫폼 셸 (Phase 9)
+| 컴포넌트 | 역할 |
+|---------|------|
+| PlatformLayout | 통합 레이아웃 셸 (Sidebar + TopHeader + main) |
+| Sidebar | 좌측 사이드바 (7모듈 아코디언, 라이트 스타일, 접기/펼치기) |
+| SidebarNavItem | 사이드바 메뉴 아이템 (아코디언, 활성 강조, 비활성 처리) |
+| TopHeader | 상단 헤더 48px (모바일 햄버거 + 브레드크럼 + 검색) |
+| Breadcrumbs | 경로 기반 브레드크럼 (동적 회의 제목 지원) |
+| MeetingWorkflowNav | 회의 워크플로우 서브내비 (회의정보→편집→검증) |
 
 ### 공통
 | 컴포넌트 | 역할 |
 |---------|------|
-| Header | 로고, 제목, VOD 등록 버튼 |
+| Header | 로고, 제목, VOD 등록 버튼 (레거시, PlatformLayout으로 대체됨) |
 | Badge | Live/VOD/상태 배지 |
 | Toast | 알림 토스트 |
 | SubtitleItem | 자막 단일 아이템 |
@@ -358,6 +382,18 @@ fields:
 - **stop_all() 정리**: AutoSttManager.stop() 시 모든 활성 채널 STT를 일괄 중지
 - **SubtitleCorrector 생명주기**: lifespan에서 start/stop 관리
 
+### 플랫폼 셸 UI (Phase 9)
+- **통합 레이아웃**: `layout.tsx`에서 SidebarProvider + BreadcrumbProvider + PlatformLayout 래핑
+- **사이드바 7모듈**: 회의관리, 회의록작성, 화자관리, 대조관리, 교정/편집관리, 의안관리, 통합검색, 시스템관리
+  - 회의 미선택 시 4개 모듈 (회의록작성/화자관리/대조관리/교정편집관리) disabled
+  - `/vod/[id]/*` 경로 감지 시 워크플로우 서브내비 자동 표시
+- **사이드바 상태 관리**: SidebarContext (collapsed/mobileOpen) + localStorage 지속
+- **동적 브레드크럼**: BreadcrumbContext로 회의 제목 주입 (VOD 상세/편집/검증 페이지)
+- **반응형**: 데스크톱(확장 256px), 태블릿(축소 64px 아이콘), 모바일(오버레이)
+- **라이트 스타일**: `bg-white border-r border-gray-200`, 활성: `bg-blue-50 text-primary`
+- **개별 Header 제거**: 8개 페이지에서 `<Header>` 컴포넌트 제거, PlatformLayout으로 통합
+- **네비게이션 설정**: `config/navigation.ts` (NAV_MODULES, BREADCRUMB_MAP, extractMeetingIdFromPath)
+
 ---
 
 ## DB 테이블 (Supabase)
@@ -446,6 +482,11 @@ cd frontend && npx jest && cd ../backend && python -m pytest
 ### useSubtitleSync
 - `videoRef.current`는 useEffect 의존성으로 부적합 (mutable ref) → `videoRef`만 사용
 
+### 레이아웃 테스트 (Phase 9)
+- PlatformLayout/Sidebar/TopHeader/Breadcrumbs 테스트에서 SidebarContext, BreadcrumbContext 모킹 필수
+- BreadcrumbContext mock의 `setTitle`은 안정적 참조 필요 (매 렌더링 새 `jest.fn()` 생성 시 무한 루프)
+- `jest.mock('next/navigation', ...)` 에서 `usePathname` 반환값으로 경로별 테스트
+
 ---
 
 ## 진행 상황
@@ -464,6 +505,7 @@ cd frontend && npx jest && cd ../backend && python -m pytest
 - [x] Phase 6B: 용어점검 + AI 문장검사 + PII 마스킹 + 교정 도구 UI
 - [x] Phase 7: 대조관리 (Verification QA) + AI 회의 요약
 - [x] Phase 8: Railway 안정성 + OpenAI 실시간 자막 교정
+- [x] Phase 9: 플랫폼 셸 UI 통합 (사이드바 + 상단 헤더 + 브레드크럼)
 
 ### 빌드 수정 이력 (2026-02-10)
 - ESLint import/order, consistent-type-imports 에러 6개 수정
@@ -479,3 +521,14 @@ cd frontend && npx jest && cd ../backend && python -m pytest
 - WebSocket `subtitle_corrected` 이벤트 추가 (프론트엔드 연동)
 - 프론트엔드 교정 UI: SubtitleItem에 교정 체크마크 표시
 - 테스트: Frontend 392/392, Backend 309/309 통과
+
+### Phase 9 구현 이력 (2026-02-12)
+- 플랫폼 셸 통합: SidebarContext + BreadcrumbContext + PlatformLayout
+- 7모듈 사이드바: navigation.ts 설정 기반, 아코디언 메뉴, 접기/펼치기
+- 상단 헤더 (48px): 브레드크럼 + 모바일 햄버거 + 검색 바로가기
+- MeetingWorkflowNav: `/vod/[id]/*` 경로에서 워크플로우 단계 표시
+- 8개 페이지에서 개별 `<Header>` 제거 → PlatformLayout 통합
+- Admin 스텁 페이지 (`/admin`) 추가
+- 레이아웃 테스트 4개 (Sidebar, TopHeader, Breadcrumbs, PlatformLayout) + 기존 테스트 수정
+- 테스트: Frontend 415/415 (29 suites), Backend 309/309 통과
+- 신규 파일 15개, 수정 파일 11개 (총 26개 파일 변경)

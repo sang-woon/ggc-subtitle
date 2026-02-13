@@ -1,0 +1,22 @@
+WARNING:     app.services.channel_stt - Kiwi default init failed (non-ASCII path?), copying model to safe path
+INFO:     Started server process [38660]
+INFO:     Waiting for application startup.
+INFO:     app.services.auto_stt - AutoSttManager starting: auto-start STT for broadcasting channels
+INFO:     httpx - HTTP Request: POST https://live.ggc.go.kr/getOnairListTodayData.do "HTTP/1.1 200 200"
+INFO:     app.services.auto_stt - AutoSTT: starting STT for live channel ch7 (안전행정위원회)
+INFO:     app.services.channel_stt - Starting STT for channel ch7: https://stream02.cdn.gov-ntruss.com/live/ch7/playlist.m3u8
+INFO:     app.services.auto_stt - AutoSTT: starting STT for live channel ch15 (농정해양위원회)
+INFO:     app.services.channel_stt - Starting STT for channel ch15: https://stream01.cdn.gov-ntruss.com/live/ch15/playlist.m3u8
+INFO:     app.services.auto_stt - AutoSTT: starting STT for live channel ch2 (보건복지위원회)
+INFO:     app.services.channel_stt - Starting STT for channel ch2: https://stream02.cdn.gov-ntruss.com/live/ch2/playlist.m3u8
+INFO:     app.services.auto_stt - AutoSTT: started STT for 3 broadcasting channels
+INFO:     app.main - Application startup complete (auto_stt enabled=True)
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8000): [winerror 10048] 각 소켓 주소(프로토콜/네트워크 주소/포트)는 하나만 사용할 수 있습니다
+INFO:     Waiting for application shutdown.
+INFO:     app.services.auto_stt - AutoSttManager stopped
+INFO:     app.main - Application shutdown complete
+INFO:     Application shutdown complete.
+INFO:     app.services.channel_stt - Channel ch7: STT cancelled
+INFO:     app.services.channel_stt - Channel ch2: STT cancelled
+INFO:     app.services.channel_stt - Channel ch15: STT cancelled

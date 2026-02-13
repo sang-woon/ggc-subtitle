@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import Mp4Player from '../../../../components/Mp4Player';
 import VideoControls from '../../../../components/VideoControls';
+import { useBreadcrumb } from '../../../../contexts/BreadcrumbContext';
 import {
   apiClient,
   batchVerifySubtitles,
@@ -42,6 +43,7 @@ function getConfidenceClass(confidence: number | null): string {
 
 export default function VerifyPage({ params }: VerifyPageProps) {
   const router = useRouter();
+  const { setTitle } = useBreadcrumb();
   const { id } = params;
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -76,6 +78,7 @@ export default function VerifyPage({ params }: VerifyPageProps) {
         ]);
 
         setMeeting(meetingData);
+        setTitle(meetingData.title);
         setStats(statsData);
         setQueue(queueData.items ?? []);
 
@@ -90,7 +93,7 @@ export default function VerifyPage({ params }: VerifyPageProps) {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, setTitle]);
 
   // 통계 새로고침
   const refreshStats = useCallback(async () => {
@@ -281,37 +284,8 @@ export default function VerifyPage({ params }: VerifyPageProps) {
   return (
     <div
       data-testid="verify-page"
-      className="min-h-screen flex flex-col bg-gray-50"
+      className="flex flex-col h-full"
     >
-      {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">자막 검증</h1>
-            <p className="text-sm text-gray-500">{meeting.title}</p>
-          </div>
-          <button
-            data-testid="back-button"
-            onClick={() => router.push(`/vod/${id}`)}
-            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            <span className="font-medium">돌아가기</span>
-          </button>
-        </div>
-      </header>
 
       {/* 진행률 바 */}
       {stats && (

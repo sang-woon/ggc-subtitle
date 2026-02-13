@@ -8,9 +8,9 @@ export interface MeetingType {
   vod_url: string | null;
   status: 'scheduled' | 'live' | 'processing' | 'ended';
   duration_seconds: number | null;
-  meeting_type: string | null;
-  committee: string | null;
-  transcript_status: 'draft' | 'reviewing' | 'final';
+  meeting_type?: string | null;
+  committee?: string | null;
+  transcript_status?: 'draft' | 'reviewing' | 'final';
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +55,7 @@ export interface ChannelType {
   has_schedule?: boolean;  // 오늘 일정 유무
   session_no?: number;     // 회차 (예: 388 → 제388회)
   session_order?: number;  // 차수 (예: 1 → 제1차)
+  stt_running?: boolean;
 }
 
 export interface VodRegisterFormType {

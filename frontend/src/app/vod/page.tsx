@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-import { Header } from '@/components';
 import Pagination from '@/components/Pagination';
 import VodTable from '@/components/VodTable';
 import { useVodList } from '@/hooks/useVodList';
@@ -16,10 +15,8 @@ export default function VodListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      <main className="max-w-4xl mx-auto px-4 py-8">
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">VOD 목록</h1>
 
         {isLoading ? (
@@ -45,7 +42,7 @@ export default function VodListPage() {
             )}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

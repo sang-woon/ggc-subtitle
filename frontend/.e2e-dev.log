@@ -1,0 +1,98 @@
+
+> ggc-subtitle-frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.9s
+ ○ Compiling / ...
+ ✓ Compiled / in 2.9s (611 modules)
+ GET / 200 in 3308ms
+ ✓ Compiled in 477ms (309 modules)
+ GET / 200 in 107ms
+ GET / 200 in 50ms
+ GET / 200 in 50ms
+ HEAD / 200 in 55ms
+ GET / 200 in 58ms
+ GET / 200 in 66ms
+ GET / 200 in 227ms
+ ○ Compiling /bills ...
+ ✓ Compiled /bills in 1966ms (621 modules)
+ GET /search 200 in 2519ms
+ GET /live 200 in 2737ms
+ GET /vod 200 in 2598ms
+ GET /bills 200 in 2381ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 959ms (627 modules)
+ ✓ Compiled in 1071ms (639 modules)
+ GET /admin 200 in 264ms
+ HEAD /admin 200 in 55ms
+ ✓ Compiled in 496ms (625 modules)
+ ✓ Compiled in 905ms (639 modules)
+ ✓ Compiled in 599ms (639 modules)
+ ✓ Compiled in 202ms (321 modules)
+ ✓ Compiled in 311ms (321 modules)
+ ✓ Compiled in 200ms (321 modules)
+ ✓ Compiled in 213ms (321 modules)
+ ✓ Compiled in 244ms (321 modules)
+ ✓ Compiled in 177ms (321 modules)
+ ✓ Compiled in 212ms (321 modules)
+ ✓ Compiled in 212ms (321 modules)
+ ✓ Compiled in 349ms (321 modules)
+ ✓ Compiled in 168ms (321 modules)
+ ✓ Compiled in 204ms (321 modules)
+ ✓ Compiled in 191ms (321 modules)
+ GET / 200 in 192ms
+ GET / 200 in 55ms
+ GET / 200 in 61ms
+ GET / 200 in 57ms
+ GET / 200 in 40ms
+ GET / 200 in 45ms
+ GET / 200 in 49ms
+ GET / 200 in 56ms
+ GET / 200 in 90ms
+ GET / 200 in 60ms
+ GET /admin 200 in 57ms
+ GET /admin 200 in 87ms
+ GET / 200 in 45ms
+ GET / 200 in 52ms
+ GET / 200 in 44ms
+ GET / 200 in 56ms
+ GET / 200 in 57ms
+ GET / 200 in 73ms
+ GET / 200 in 57ms
+ GET / 200 in 38ms
+ GET / 200 in 65ms
+ GET / 200 in 37ms
+ GET / 200 in 30ms
+ GET / 200 in 75ms
+ GET / 200 in 50ms
+ GET / 200 in 68ms
+ GET / 200 in 72ms
+ GET / 200 in 43ms
+ GET / 200 in 34ms
+ GET / 200 in 78ms
+ GET / 200 in 37ms
+ GET / 200 in 76ms
+ GET / 200 in 57ms
+ ✓ Compiled in 369ms (321 modules)
+ ✓ Compiled in 271ms (321 modules)
+ ✓ Compiled in 286ms (321 modules)
+ ✓ Compiled in 278ms (321 modules)
+ GET / 200 in 61ms
+ GET / 200 in 41ms
+ GET / 200 in 63ms
+ GET / 200 in 45ms
+ GET / 200 in 56ms
+ GET / 200 in 55ms
+ GET / 200 in 52ms
+ GET / 200 in 39ms
+ GET / 200 in 56ms
+ GET / 200 in 55ms
+ GET / 200 in 78ms
+ GET / 200 in 73ms
+ GET / 200 in 45ms
+ GET / 200 in 59ms

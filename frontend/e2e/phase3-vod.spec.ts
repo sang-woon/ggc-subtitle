@@ -652,6 +652,79 @@ test.describe('Phase 3: VOD E2E Tests', () => {
   });
 
   // ============================================================
+  // 6. Speaker Management
+  // ============================================================
+  test.describe('Speaker Management', () => {
+    test('can navigate to speaker management and save speaker batch update', async ({ page }) => {
+      const patchPayloads: Array<Record<string, unknown>> = [];
+
+      await page.route('**/api/meetings/vod-1', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockVodMeeting),
+        });
+      });
+
+      await page.route('**/api/meetings/vod-1/subtitles*', async (route, request) => {
+        if (request.method() === 'GET') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ items: mockSubtitles }),
+          });
+          return;
+        }
+
+        if (request.method() === 'PATCH') {
+          const requestBody = request.postData() ? JSON.parse(request.postData()!) : {};
+          patchPayloads.push(requestBody);
+
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              updated: 1,
+              items: requestBody.items || [],
+            }),
+          });
+          return;
+        }
+
+        await route.continue();
+      });
+
+      await page.goto('/vod/vod-1');
+
+      await expect(page.getByRole('link', { name: '화자 관리' })).toBeVisible();
+      await page.getByRole('link', { name: '화자 관리' }).click();
+      await expect(page).toHaveURL('/vod/vod-1/speaker');
+
+      const firstSubtitleSelect = page
+        .getByText('안녕하세요. 제351회 본회의를 시작하겠습니다.')
+        .locator('..')
+        .getByRole('combobox');
+      await firstSubtitleSelect.selectOption('화자 1');
+
+      await page.getByRole('button', { name: /변경 저장/i }).click();
+
+      await expect(async () => {
+        expect(patchPayloads).toHaveLength(1);
+      }).toPass({ timeout: 3000 });
+
+      const payload = patchPayloads[0];
+      expect(payload).toEqual({
+        items: [
+          {
+            id: 'sub-1',
+            speaker: '화자 1',
+          },
+        ],
+      });
+    });
+  });
+
+  // ============================================================
   // meetings/subtitles Resource Field Coverage (VOD context)
   // ============================================================
   test.describe('VOD Resource Field Coverage', () => {
@@ -676,23 +749,30 @@ test.describe('Phase 3: VOD E2E Tests', () => {
     });
 
     test('subtitle fields should be properly structured', async () => {
+      const firstSubtitle = mockSubtitles[0];
+
+      expect(firstSubtitle).toBeDefined();
+      if (!firstSubtitle) {
+        throw new Error('Expected at least one mock subtitle fixture.');
+      }
+
       // Verify mock subtitle structure covers all required fields
-      expect(mockSubtitles[0]).toHaveProperty('id');
-      expect(mockSubtitles[0]).toHaveProperty('meeting_id');
-      expect(mockSubtitles[0]).toHaveProperty('start_time');
-      expect(mockSubtitles[0]).toHaveProperty('end_time');
-      expect(mockSubtitles[0]).toHaveProperty('text');
-      expect(mockSubtitles[0]).toHaveProperty('speaker');
-      expect(mockSubtitles[0]).toHaveProperty('confidence');
+      expect(firstSubtitle).toHaveProperty('id');
+      expect(firstSubtitle).toHaveProperty('meeting_id');
+      expect(firstSubtitle).toHaveProperty('start_time');
+      expect(firstSubtitle).toHaveProperty('end_time');
+      expect(firstSubtitle).toHaveProperty('text');
+      expect(firstSubtitle).toHaveProperty('speaker');
+      expect(firstSubtitle).toHaveProperty('confidence');
 
       // Verify field types
-      expect(typeof mockSubtitles[0].id).toBe('string');
-      expect(typeof mockSubtitles[0].meeting_id).toBe('string');
-      expect(typeof mockSubtitles[0].start_time).toBe('number');
-      expect(typeof mockSubtitles[0].end_time).toBe('number');
-      expect(typeof mockSubtitles[0].text).toBe('string');
-      expect(typeof mockSubtitles[0].speaker).toBe('string');
-      expect(typeof mockSubtitles[0].confidence).toBe('number');
+      expect(typeof firstSubtitle.id).toBe('string');
+      expect(typeof firstSubtitle.meeting_id).toBe('string');
+      expect(typeof firstSubtitle.start_time).toBe('number');
+      expect(typeof firstSubtitle.end_time).toBe('number');
+      expect(typeof firstSubtitle.text).toBe('string');
+      expect(typeof firstSubtitle.speaker).toBe('string');
+      expect(typeof firstSubtitle.confidence).toBe('number');
     });
   });
 });

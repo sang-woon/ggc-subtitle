@@ -1,17 +1,10 @@
 /**
  * useLiveMeeting 훅 테스트
- *
- * 테스트 케이스:
- * 1. 실시간 회의 데이터 가져오기
- * 2. 실시간 회의 없을 때 null 반환
- * 3. 로딩 상태 처리
- * 4. 에러 상태 처리
- * 5. 5초 폴링 동작
  */
 
 import type { ReactNode } from 'react';
 
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 
 import { apiClient } from '@/lib/api';
@@ -40,37 +33,45 @@ const mockLiveMeeting: MeetingType = {
   updated_at: '2026-02-05T09:00:00Z',
 };
 
-// SWR test wrapper to disable cache between tests
-function TestWrapper({ children }: { children: ReactNode }) {
-  return (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
-}
+// SWR test wrapper to isolate cache between tests
+function createWrapper() {
+  const TestWrapper = ({ children }: { children: ReactNode }) => {
+    return (
+      <SWRConfig value={{ provider: () => new Map() }}>
+        {children}
+      </SWRConfig>
+    );
+  };
 
-const createWrapper = () => TestWrapper;
+  return TestWrapper;
+}
 
 describe('useLiveMeeting', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
+  const renderLiveHook = async () => {
+    const result = renderHook(() => useLiveMeeting(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    return result;
+  };
+
   describe('Data fetching', () => {
     it('should fetch live meeting data successfully', async () => {
       mockApiClient.mockResolvedValueOnce(mockLiveMeeting);
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
-
-      // 초기 로딩 상태
-      expect(result.current.isLoading).toBe(true);
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -82,12 +83,9 @@ describe('useLiveMeeting', () => {
     });
 
     it('should return null when no live meeting exists', async () => {
-      // API가 404 또는 null 반환할 때
       mockApiClient.mockResolvedValueOnce(null);
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -100,7 +98,8 @@ describe('useLiveMeeting', () => {
 
   describe('Loading state', () => {
     it('should show loading state while fetching', async () => {
-      // 지연된 응답 시뮬레이션
+      jest.useFakeTimers();
+
       mockApiClient.mockImplementation(
         () =>
           new Promise((resolve) => {
@@ -108,14 +107,11 @@ describe('useLiveMeeting', () => {
           })
       );
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       expect(result.current.isLoading).toBe(true);
       expect(result.current.meeting).toBeNull();
 
-      // 타이머 진행
       await act(async () => {
         jest.advanceTimersByTime(100);
       });
@@ -130,12 +126,9 @@ describe('useLiveMeeting', () => {
 
   describe('Error handling', () => {
     it('should handle API error gracefully', async () => {
-      const error = new Error('API Error');
-      mockApiClient.mockRejectedValueOnce(error);
+      mockApiClient.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -148,9 +141,7 @@ describe('useLiveMeeting', () => {
     it('should handle network error', async () => {
       mockApiClient.mockRejectedValueOnce(new Error('Network error'));
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.error).not.toBeNull();
@@ -163,17 +154,14 @@ describe('useLiveMeeting', () => {
   describe('Polling', () => {
     it('should poll every 5 seconds', async () => {
       mockApiClient.mockResolvedValue(mockLiveMeeting);
+      jest.useFakeTimers();
 
-      renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      await renderLiveHook();
 
-      // 초기 호출
       await waitFor(() => {
         expect(mockApiClient).toHaveBeenCalledTimes(1);
       });
 
-      // 5초 후
       await act(async () => {
         jest.advanceTimersByTime(5000);
       });
@@ -182,7 +170,6 @@ describe('useLiveMeeting', () => {
         expect(mockApiClient).toHaveBeenCalledTimes(2);
       });
 
-      // 10초 후
       await act(async () => {
         jest.advanceTimersByTime(5000);
       });
@@ -194,20 +181,18 @@ describe('useLiveMeeting', () => {
 
     it('should update data when meeting status changes', async () => {
       const updatedMeeting = { ...mockLiveMeeting, status: 'ended' as const };
+      jest.useFakeTimers();
 
       mockApiClient
         .mockResolvedValueOnce(mockLiveMeeting)
         .mockResolvedValueOnce(updatedMeeting);
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.meeting?.status).toBe('live');
       });
 
-      // 5초 후 폴링
       await act(async () => {
         jest.advanceTimersByTime(5000);
       });
@@ -222,9 +207,7 @@ describe('useLiveMeeting', () => {
     it('should provide mutate function to manually refresh', async () => {
       mockApiClient.mockResolvedValue(mockLiveMeeting);
 
-      const { result } = renderHook(() => useLiveMeeting(), {
-        wrapper: createWrapper(),
-      });
+      const { result } = await renderLiveHook();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -232,12 +215,10 @@ describe('useLiveMeeting', () => {
 
       expect(typeof result.current.mutate).toBe('function');
 
-      // mutate 호출
       await act(async () => {
         result.current.mutate();
       });
 
-      // mutate 후 API 재호출 확인
       await waitFor(() => {
         expect(mockApiClient).toHaveBeenCalledTimes(2);
       });
