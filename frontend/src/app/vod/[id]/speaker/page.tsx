@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -9,6 +10,7 @@ import TranscriptStatusBadge from '../../../../components/TranscriptStatusBadge'
 import VideoControls from '../../../../components/VideoControls';
 import { useBreadcrumb } from '../../../../contexts/BreadcrumbContext';
 import { apiClient, updateSubtitlesBatch } from '../../../../lib/api';
+
 import type { SubtitleBatchItem } from '../../../../lib/api';
 import type { MeetingType, SubtitleType } from '../../../../types';
 
