@@ -16,9 +16,11 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
+  function MockLink({ children, href }: { children: React.ReactNode; href: string }) {
+    return <a href={href}>{children}</a>;
+  }
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
 jest.mock('../../../../contexts/BreadcrumbContext', () => ({
